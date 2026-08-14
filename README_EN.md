@@ -1,23 +1,24 @@
 # neat_form 📋
 
-A clean, lightweight, type-safe form state management and validation library for Dart & Flutter.
+A clean, lightweight, type-safe form state management and validation library for Flutter & Dart.
 
-[![pub package](https://img.shields.io/badge/pub-v1.0.0-blue.svg)](https://pub.dev)
+[![pub package](https://img.shields.io/badge/pub-v0.0.1-blue.svg)](https://pub.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- 🚀 **Zero UI Coupling:** Pure Dart core without `BuildContext` dependencies — easily unit test form logic without rendering widgets.
-- 🔒 **Type-Safe & Immutable:** Full compile-time static type safety with `NeatFieldState<T>` and `NeatValidator<T>`.
-- 🌐 **Clean Localization Architecture:** Validation errors produce machine-readable `code` and `params`, allowing the UI layer to map them to your localization solution (`l10n`/`i18n`) seamlessly.
-- ⚡ **State-Manager Agnostic:** Works flawlessly with **Riverpod**, **Bloc/Cubit**, **ValueNotifier**, **MobX**, **GetX**, and more.
-- 🛠️ **Rich Built-in Validators:** `required`, `email`, `minLength`, `maxLength`, `lengthRange`, `minValue`, `maxValue`, `match` (e.g. confirm password), `pattern` (Regex), `noSpecialChars`, `alphanumericOnly`, `noSpaces`, `blacklist`, and `combine`.
-- ⏱️ **Sync & Async Validation:** First-class support for asynchronous server-side validations (e.g. check username availability) with the `isValidating` flag.
-- 🧙 **Multi-step Form Support:** Validate specific subsets of fields for multi-step wizard flows.
+- 🚀 **Zero UI Coupling:** Pure core logic — easily unit test form business logic without rendering widgets.
+- 🎯 **Native Flutter Integration:** `NeatFormController` extends `ChangeNotifier`/`Listenable` for direct usage with `ListenableBuilder` or `AnimatedBuilder`.
+- 🔒 **Type-Safe & Immutable (100% `Object?` - No `dynamic`):** Full compile-time static type safety with `NeatFieldState<T>` and `NeatValidator<T>`.
+- 🌐 **Localization & Parameter Interpolation:** Produces machine-readable error codes and params; `NeatErrorResolver` automatically interpolates placeholders like `{minLength}`.
+- ⚡ **State-Manager Agnostic:** Works seamlessly with **Riverpod**, **Bloc/Cubit**, **ValueNotifier**, or standalone with `NeatFormController`.
+- 🛠️ **Rich Built-in Validators:** `required()`, `email()`, `minLength()`, `maxLength()`, `lengthRange()`, `minValue()`, `maxValue()`, `match()`, `pattern()`, `numeric()`, `url()`, `noSpecialChars()`, `alphanumericOnly()`, `noSpaces()`, `blacklist()`, `when()`, and `combine()`.
+- ⏱️ **Sync & Async Validation:** Automatic race-condition protection for async validations and token invalidation on form reset.
+- 🔄 **Submission Lifecycle:** Built-in `submissionStatus` (`idle`, `submitting`, `success`, `failure`) inside `submitForm()`.
 
 ---
 
@@ -27,133 +28,214 @@ Add `neat_form` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.0.0
+  neat_form: ^0.0.1
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Define Form State & Notifier (Riverpod Example)
+### Approach A: Flutter `ListenableBuilder` (No external state manager)
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:neat_form/neat_form.dart';
+
+enum LoginFormKey { email, password }
+
+class LoginFormPage extends StatefulWidget {
+  const LoginFormPage({super.key});
+
+  @override
+  State<LoginFormPage> createState() => _LoginFormPageState();
+}
+
+class _LoginFormPageState extends State<LoginFormPage> {
+  late final NeatFormController<LoginFormKey> _form;
+
+  @override
+  void initState() {
+    super.initState();
+    _form = NeatFormController<LoginFormKey>(
+      initialFields: {
+        LoginFormKey.email: const NeatFieldState<String>(value: ''),
+        LoginFormKey.password: const NeatFieldState<String>(value: ''),
+      },
+      validators: {
+        LoginFormKey.email: NeatValidators.combine([
+          NeatValidators.required(message: 'Email is required'),
+          NeatValidators.email(message: 'Invalid email address'),
+        ]),
+        LoginFormKey.password: NeatValidators.combine([
+          NeatValidators.required(message: 'Password is required'),
+          NeatValidators.minLength(8, message: 'Must be at least {minLength} characters'),
+        ]),
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _form.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _form,
+      builder: (context, _) {
+        final emailField = _form.getField<String>(LoginFormKey.email);
+        final passwordField = _form.getField<String>(LoginFormKey.password);
+
+        return Column(
+          children: [
+            TextField(
+              onChanged: (val) => _form.setField(LoginFormKey.email, val),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                errorText: emailField.isErrorVisible ? emailField.error?.message : null,
+              ),
+            ),
+            TextField(
+              obscureText: true,
+              onChanged: (val) => _form.setField(LoginFormKey.password, val),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                errorText: passwordField.isErrorVisible ? passwordField.error?.message : null,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _form.submissionStatus.isSubmitting
+                  ? null
+                  : () async {
+                      await _form.submitForm(
+                        onSubmit: (values) async {
+                          print('Submitted: $values');
+                        },
+                      );
+                    },
+              child: _form.submissionStatus.isSubmitting
+                  ? const CircularProgressIndicator()
+                  : const Text('Login'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+```
+
+---
+
+### Approach B: With Riverpod (`NeatFormMixin`)
 
 ```dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:neat_form/neat_form.dart';
 
-// 1. Define form keys
-enum LoginFormKey { email, password }
+enum SignupKey { email, password, confirmPassword }
 
-// 2. Define state holding the field map
-class LoginFormState {
-  final Map<LoginFormKey, NeatFieldState<dynamic>> fields;
+class SignupState {
+  final Map<SignupKey, NeatFieldState<Object?>> fields;
 
-  const LoginFormState({
+  const SignupState({
     this.fields = const {
-      LoginFormKey.email: NeatFieldState<String>(value: ''),
-      LoginFormKey.password: NeatFieldState<String>(value: ''),
+      SignupKey.email: NeatFieldState<String>(value: ''),
+      SignupKey.password: NeatFieldState<String>(value: ''),
+      SignupKey.confirmPassword: NeatFieldState<String>(value: ''),
     },
   });
 
-  bool get isFormValid => fields.isAllFieldsValid;
+  bool get isValid => fields.areAllFieldsValid;
 }
 
-// 3. Manage logic using NeatFormMixin
-class LoginNotifier extends Notifier<LoginFormState>
-    with NeatFormMixin<LoginFormKey> {
+class SignupNotifier extends Notifier<SignupState> with NeatFormMixin<SignupKey> {
   @override
-  LoginFormState build() => const LoginFormState();
+  SignupState build() => const SignupState();
 
   @override
-  Map<LoginFormKey, NeatFieldState<dynamic>> get fields => state.fields;
+  Map<SignupKey, NeatFieldState<Object?>> get fields => state.fields;
 
   @override
-  void updateStateWithFields(
-      Map<LoginFormKey, NeatFieldState<dynamic>> newFields) {
-    state = LoginFormState(fields: newFields);
+  void updateStateWithFields(Map<SignupKey, NeatFieldState<Object?>> newFields) {
+    state = SignupState(fields: newFields);
   }
 
-  // Define validation rules
   @override
-  Map<LoginFormKey, NeatValidator<dynamic>> get validators => {
-        LoginFormKey.email: NeatValidators.combine([
-          NeatValidators.required,
+  Map<SignupKey, NeatValidator<Object?>> get validators => {
+        SignupKey.email: NeatValidators.combine([
+          NeatValidators.required(),
           NeatValidators.email(),
         ]),
-        LoginFormKey.password: NeatValidators.combine([
-          NeatValidators.required,
+        SignupKey.password: NeatValidators.combine([
+          NeatValidators.required(),
           NeatValidators.minLength(8),
+        ]),
+        SignupKey.confirmPassword: NeatValidators.match(
+          () => getField<String>(SignupKey.password).value,
+          message: 'Passwords do not match',
+        ),
+      };
+
+  void onEmailChanged(String val) => setAndValidateField(SignupKey.email, val);
+}
+```
+
+---
+
+### Approach C: With BLoC / Cubit
+
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:neat_form/neat_form.dart';
+
+enum ProfileKey { name, age }
+
+class ProfileState {
+  final Map<ProfileKey, NeatFieldState<Object?>> fields;
+  final NeatSubmissionStatus status;
+
+  const ProfileState({
+    this.fields = const {
+      ProfileKey.name: NeatFieldState<String>(value: ''),
+      ProfileKey.age: NeatFieldState<int?>(value: null),
+    },
+    this.status = NeatSubmissionStatus.idle,
+  });
+}
+
+class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
+  ProfileCubit() : super(const ProfileState());
+
+  @override
+  Map<ProfileKey, NeatFieldState<Object?>> get fields => state.fields;
+
+  @override
+  NeatSubmissionStatus get submissionStatus => state.status;
+
+  @override
+  void updateStateWithFields(Map<ProfileKey, NeatFieldState<Object?>> newFields) {
+    emit(ProfileState(fields: newFields, status: state.status));
+  }
+
+  @override
+  void updateSubmissionStatus(NeatSubmissionStatus status) {
+    emit(ProfileState(fields: state.fields, status: status));
+  }
+
+  @override
+  Map<ProfileKey, NeatValidator<Object?>> get validators => {
+        ProfileKey.name: NeatValidators.required(message: 'Name is required'),
+        ProfileKey.age: NeatValidators.combine([
+          NeatValidators.required(),
+          NeatValidators.minValue(18, message: 'Must be 18+'),
         ]),
       };
 
-  // Update value and validate in real-time
-  void onEmailChanged(String val) {
-    setAndValidateField(LoginFormKey.email, val);
-  }
-
-  void onPasswordChanged(String val) {
-    setAndValidateField(LoginFormKey.password, val);
-  }
-
-  // Validate the whole form upon submit
-  void submit() {
-    if (!validateForm()) {
-      print('Form is invalid!');
-      return;
-    }
-    print('Form submitted successfully: ${fields.toValuesMap()}');
-  }
-}
-```
-
-### 2. Render in Flutter UI
-
-```dart
-class EmailInputWidget extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final emailField = ref.watch(
-      loginNotifierProvider.select((s) => s.fields.getField<String>(LoginFormKey.email)),
-    );
-
-    return TextField(
-      onChanged: (val) => ref.read(loginNotifierProvider.notifier).onEmailChanged(val),
-      decoration: InputDecoration(
-        labelText: 'Email',
-        errorText: emailField.isShowError ? _getErrorMessage(emailField.error!) : null,
-      ),
-    );
-  }
-
-  String _getErrorMessage(NeatValidationError error) {
-    switch (error.code) {
-      case NeatValidators.codeRequired:
-        return 'This field is required';
-      case NeatValidators.codeEmail:
-        return 'Invalid email address';
-      default:
-        return error.message ?? 'Invalid input';
-    }
-  }
-}
-```
-
-### 3. Async Validation
-
-```dart
-Future<void> checkUsernameAvailability(String username) async {
-  await validateFieldAsync(
-    LoginFormKey.email,
-    (value) async {
-      final isAvailable = await apiService.checkEmail(value);
-      if (!isAvailable) {
-        return const NeatValidationError(
-          'email_taken',
-          message: 'This email is already registered',
-        );
-      }
-      return null;
-    },
-  );
+  void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
+  void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
 }
 ```
 

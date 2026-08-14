@@ -1,22 +1,69 @@
+import 'package:flutter_test/flutter_test.dart';
 import 'package:neat_form/neat_form.dart';
-import 'package:test/test.dart';
 
 void main() {
-  group('NeatValidators.required', () {
-    test('returns error for null, empty string, empty list, empty map', () {
-      expect(NeatValidators.required(null), isNotNull);
-      expect(NeatValidators.required(''), isNotNull);
-      expect(NeatValidators.required('   '), isNotNull);
-      expect(NeatValidators.required(<dynamic>[]), isNotNull);
-      expect(NeatValidators.required(<String, dynamic>{}), isNotNull);
+  group('NeatValidators.required & requiredWith', () {
+    final requiredValidator = NeatValidators.required();
+
+    test('required returns error for null, empty string, empty list, empty map',
+        () {
+      expect(requiredValidator(null), isNotNull);
+      expect(requiredValidator(''), isNotNull);
+      expect(requiredValidator('   '), isNotNull);
+      expect(requiredValidator(<dynamic>[]), isNotNull);
+      expect(requiredValidator(<String, dynamic>{}), isNotNull);
     });
 
-    test('returns null for valid inputs', () {
-      expect(NeatValidators.required('hello'), isNull);
-      expect(NeatValidators.required(0), isNull);
-      expect(NeatValidators.required(false), isNull);
-      expect(NeatValidators.required(['item']), isNull);
-      expect(NeatValidators.required({'key': 'value'}), isNull);
+    test('required returns null for valid inputs', () {
+      expect(requiredValidator('hello'), isNull);
+      expect(requiredValidator(0), isNull);
+      expect(requiredValidator(false), isNull);
+      expect(requiredValidator(['item']), isNull);
+      expect(requiredValidator({'key': 'value'}), isNull);
+    });
+
+    test('required creates configurable required validator', () {
+      final customRequired = NeatValidators.required<String>(
+        code: 'custom_required',
+        message: 'Must not be empty',
+      );
+
+      final error = customRequired('');
+      expect(error?.code, 'custom_required');
+      expect(error?.message, 'Must not be empty');
+
+      expect(customRequired('valid string'), isNull);
+    });
+
+    test('requiredWith creates backward compatible required validator', () {
+      final customRequired = NeatValidators.requiredWith<String>(
+        code: 'custom_required',
+        message: 'Must not be empty',
+      );
+
+      final error = customRequired('');
+      expect(error?.code, 'custom_required');
+      expect(error?.message, 'Must not be empty');
+
+      expect(customRequired('valid string'), isNull);
+    });
+  });
+
+  group('NeatValidators.when', () {
+    test('runs validator only when condition is true', () {
+      var isUSResident = false;
+      final validator = NeatValidators.when<String>(
+        () => isUSResident,
+        NeatValidators.required(code: 'us_zip_required'),
+      );
+
+      // When condition is false, empty string is valid
+      expect(validator(''), isNull);
+
+      // When condition is true, validator runs
+      isUSResident = true;
+      expect(validator('')?.code, 'us_zip_required');
+      expect(validator('90210'), isNull);
     });
   });
 
@@ -38,7 +85,30 @@ void main() {
     });
   });
 
-  group('NeatValidators.minLength & maxLength', () {
+  group('NeatValidators.numeric & url', () {
+    test('numeric validates integers and decimals', () {
+      final v = NeatValidators.numeric();
+      expect(v('123'), isNull);
+      expect(v('-45.67'), isNull);
+      expect(v('0'), isNull);
+      expect(v('abc'), isNotNull);
+      expect(v('12a3'), isNotNull);
+      expect(v(''), isNull); // empty string ignored
+      expect(v(null), isNull);
+    });
+
+    test('url validates correct http/https urls', () {
+      final v = NeatValidators.url();
+      expect(v('https://example.com'), isNull);
+      expect(v('http://sub.domain.com/path?arg=1'), isNull);
+      expect(v('ftp://example.com'), isNotNull);
+      expect(v('not_a_url'), isNotNull);
+      expect(v(''), isNull);
+      expect(v(null), isNull);
+    });
+  });
+
+  group('NeatValidators.minLength & maxLength & lengthRange', () {
     test('minLength works correctly', () {
       final v = NeatValidators.minLength(5);
       expect(v('1234'), isNotNull);
@@ -53,6 +123,14 @@ void main() {
       expect(v('12345'), isNull);
       expect(v('123456'), isNotNull);
       expect(v(null), isNull);
+    });
+
+    test('lengthRange validates both min and max', () {
+      final v = NeatValidators.lengthRange(3, 6);
+      expect(v('ab'), isNotNull);
+      expect(v('abc'), isNull);
+      expect(v('abcdef'), isNull);
+      expect(v('abcdefg'), isNotNull);
     });
   });
 
@@ -87,7 +165,7 @@ void main() {
     });
   });
 
-  group('NeatValidators.noSpecialChars & alphanumericOnly', () {
+  group('NeatValidators.noSpecialChars & alphanumericOnly & spaces', () {
     test('noSpecialChars flags symbols', () {
       final v = NeatValidators.noSpecialChars();
       expect(v('Hello World'), isNull);
@@ -102,6 +180,19 @@ void main() {
       expect(v('User 123'), isNotNull);
       expect(v('User_123'), isNotNull);
     });
+
+    test('noSpaces flags spaces anywhere', () {
+      final v = NeatValidators.noSpaces();
+      expect(v('no_spaces'), isNull);
+      expect(v('has space'), isNotNull);
+    });
+
+    test('noLeadingTrailingSpaces flags outer whitespace only', () {
+      final v = NeatValidators.noLeadingTrailingSpaces();
+      expect(v('hello world'), isNull);
+      expect(v(' hello world'), isNotNull);
+      expect(v('hello world '), isNotNull);
+    });
   });
 
   group('NeatValidators.blacklist', () {
@@ -113,10 +204,19 @@ void main() {
     });
   });
 
-  group('NeatValidators.combine', () {
-    test('runs multiple validators and stops on first error', () {
+  group('NeatValidators.custom & combine', () {
+    test('custom validator evaluates predicate correctly', () {
+      final v = NeatValidators.custom<int>(
+        (val) => val != null && val % 2 == 0,
+        code: 'must_be_even',
+      );
+      expect(v(4), isNull);
+      expect(v(5)?.code, 'must_be_even');
+    });
+
+    test('combine runs multiple validators and stops on first error', () {
       final v = NeatValidators.combine<String>([
-        NeatValidators.required,
+        NeatValidators.required(),
         NeatValidators.minLength(3),
         NeatValidators.alphanumericOnly(),
       ]);
@@ -125,6 +225,28 @@ void main() {
       expect(v('ab')?.code, NeatValidators.codeMinLength);
       expect(v('ab!')?.code, NeatValidators.codeAlphanumericOnly);
       expect(v('abc123'), isNull);
+    });
+  });
+
+  group('NeatValidationError equality & formatting', () {
+    test('equality and hashCode works with same codes and params', () {
+      const e1 = NeatValidationError('code1', params: {'a': 1});
+      const e2 = NeatValidationError('code1', params: {'a': 1});
+      const e3 = NeatValidationError('code1', params: {'a': 2});
+
+      expect(e1, equals(e2));
+      expect(e1.hashCode, equals(e2.hashCode));
+      expect(e1, isNot(equals(e3)));
+    });
+
+    test('toString formats error correctly', () {
+      const e = NeatValidationError(
+        'err_code',
+        params: {'k': 'v'},
+        message: 'My error',
+      );
+      expect(e.toString(), contains('err_code'));
+      expect(e.toString(), contains('My error'));
     });
   });
 }

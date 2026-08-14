@@ -1,0 +1,13 @@
+# analysis_options.yaml
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "test/**"
+    - "example/**"
+
+linter:
+  rules:
+    lines_longer_than_80_chars: false

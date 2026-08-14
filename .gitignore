@@ -11,3 +11,6 @@ pubspec.lock
 .idea/
 .vscode/
 *.iml
+
+# FVM Version Cache
+.fvm/

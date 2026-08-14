@@ -1,10 +1,6 @@
-library neat_form;
+/// A clean, lightweight, type-safe form state management and validation library for Dart & Flutter.
+library;
 
-export 'src/core/field_state.dart';
-export 'src/core/submission_status.dart';
-export 'src/core/validation_error.dart';
-export 'src/core/validator.dart';
-export 'src/core/validators.dart';
-export 'src/extensions/form_map_extensions.dart';
-export 'src/localization/error_resolver.dart';
-export 'src/mixins/neat_form_mixin.dart';
+export 'src/field_state.dart';
+export 'src/form_controller.dart';
+export 'src/validators.dart';
