@@ -37,7 +37,7 @@ Thêm `neat_form` vào file `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^0.0.1
+  neat_form: ^1.0.0
 ```
 
 ---
