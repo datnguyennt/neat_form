@@ -313,4 +313,39 @@ void main() {
       formCtrl.dispose();
     });
   });
+
+  group('NeatFormNotifierMixin', () {
+    test('binds state automatically without manual overrides', () {
+      final notifier = _SampleRiverpodNotifier();
+
+      expect(notifier.fields.length, 2);
+      expect(notifier.getField<String>(TestKey.username).value, 'john');
+      expect(notifier.submissionStatus, NeatSubmissionStatus.idle);
+
+      notifier.setField(TestKey.username, 'doe');
+      expect(notifier.state.field<String>(TestKey.username).value, 'doe');
+
+      final isValid = notifier.validateForm();
+      expect(isValid, isTrue);
+    });
+  });
 }
+
+class _SampleRiverpodNotifier with NeatFormMixin<TestKey>, NeatFormNotifierMixin<TestKey> {
+  NeatFormState<TestKey> _state = NeatFormState<TestKey>.fromValues({
+    TestKey.username: 'john',
+    TestKey.age: 30,
+  });
+
+  @override
+  NeatFormState<TestKey> get state => _state;
+
+  @override
+  set state(NeatFormState<TestKey> value) => _state = value;
+
+  @override
+  Map<TestKey, NeatValidator<Object?>> get validators => {
+        TestKey.username: NeatValidators.required(),
+      };
+}
+

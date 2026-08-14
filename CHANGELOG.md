@@ -1,5 +1,10 @@
-# 1.1.0-preview.1
+# 1.1.0-preview.2
 
+- **Ultra-Clean Riverpod Support:**
+  - Added `NeatFormNotifierMixin<K>` to automatically bind state, eliminating all manual boilerplate overrides in `Notifier<NeatFormState<K>>`.
+  - Added `NeatFormState.fromValues(...)` factory for 1-line form initialization.
+  - Added `NeatFieldState.errorMessage` getter for clean binding directly to `InputDecoration.errorText`.
+  - Added `s.field<T>(key)` and index operator `s[key]` shorthand queries.
 - **25+ Built-in Type-Safe Validators:** Added exhaustive validation rules:
   - Strings: `notBlank()`, `exactLength()`, `startsWith()`, `endsWith()`, `contains()`, `notContains()`, `latinOnly()`, `noEmoji()`.
   - Security & Fintech: `passwordStrength()`, `creditCard()` (Luhn Algorithm), `noHtml()` (anti-XSS).
@@ -12,7 +17,7 @@
 - **Async Race Condition Protection:** Sequence tokens ensure stale in-flight async requests never overwrite newer user inputs upon reset or rapid typing.
 - **Submission Lifecycle:** Added `NeatSubmissionStatus` (`idle`, `submitting`, `success`, `failure`).
 - **Interactive Multi-Platform Example App:** Full Flutter showcase supporting iOS, Android, macOS, and Web.
-- **Enhanced Test Suite:** 72 unit and widget tests covering all validators and form interactions.
+- **Enhanced Test Suite:** 78 unit and widget tests covering all validators, state models, and form interactions.
 
 # 1.0.0
 

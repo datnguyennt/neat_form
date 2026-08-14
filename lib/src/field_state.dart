@@ -1,6 +1,10 @@
 import 'package:meta/meta.dart';
+import 'package:neat_form/src/form_controller.dart';
 
 const Object _sentinel = Object();
+
+/// Short alias for [NeatFormState].
+typedef NeatForm<K> = NeatFormState<K>;
 
 /// Represents the lifecycle status of form submission.
 enum NeatSubmissionStatus {
@@ -193,6 +197,16 @@ class NeatFieldState<T> {
   /// Backward compatible alias for [isErrorVisible].
   bool get isShowError => isErrorVisible;
 
+  /// Directly returns [error.message] if [isErrorVisible] is true, otherwise `null`.
+  ///
+  /// Perfect for binding directly to Flutter's `InputDecoration.errorText`:
+  /// ```dart
+  /// InputDecoration(
+  ///   errorText: field.errorMessage,
+  /// )
+  /// ```
+  String? get errorMessage => isErrorVisible ? error?.message : null;
+
   /// Returns a copy of this state with specified fields updated.
   NeatFieldState<T> copyWith({
     Object? value = _sentinel,
@@ -250,4 +264,132 @@ class NeatFieldState<T> {
   String toString() =>
       'NeatFieldState(value: $value, error: $error, isErrorVisible: $isErrorVisible, '
       'isTouched: $isTouched, isOptional: $isOptional, isDirty: $isDirty)';
+}
+
+/// An immutable container encapsulating all form field states and submission lifecycle status.
+///
+/// Specially tailored for **Riverpod** (`Notifier<NeatFormState<K>>`) and **BLoC/Cubit**
+/// (`Cubit<NeatFormState<K>>`) to eliminate custom State class boilerplate.
+@immutable
+class NeatFormState<K> {
+  /// Creates an immutable form state with [fields] and optional submission [status].
+  const NeatFormState({
+    this.fields = const {},
+    this.status = NeatSubmissionStatus.idle,
+  });
+
+  /// Factory constructor to effortlessly initialize a [NeatFormState] from raw key-value pairs.
+  ///
+  /// ```dart
+  /// NeatFormState.fromValues({
+  ///   LoginFormKey.email: '',
+  ///   LoginFormKey.password: '',
+  ///   LoginFormKey.age: 18,
+  /// })
+  /// ```
+  factory NeatFormState.fromValues(
+    Map<K, Object?> rawValues, {
+    Map<K, bool> optionalKeys = const {},
+    NeatSubmissionStatus status = NeatSubmissionStatus.idle,
+  }) {
+    final fields = rawValues.map(
+      (key, value) => MapEntry(
+        key,
+        NeatFieldState<Object?>(
+          value: value,
+          isOptional: optionalKeys[key] ?? false,
+        ),
+      ),
+    );
+    return NeatFormState<K>(fields: fields, status: status);
+  }
+
+  /// Map containing all field states keyed by [K].
+  final Map<K, NeatFieldState<Object?>> fields;
+
+  /// Current form submission lifecycle status.
+  final NeatSubmissionStatus status;
+
+  /// Type-safe retrieval of a field state.
+  NeatFieldState<T> getField<T>(K key) => fields.getField<T>(key);
+
+  /// Concise alias for [getField].
+  NeatFieldState<T> field<T>(K key) => fields.getField<T>(key);
+
+  /// Index operator to access field state directly: `state[key]`.
+  NeatFieldState<Object?> operator [](K key) => fields.getField<Object?>(key);
+
+  /// Raw value of a field, or `null` if not found or null.
+  T? valueOf<T>(K key) => fields.valueOf<T>(key);
+
+  /// Current validation error of a field, or `null` if valid.
+  NeatValidationError? errorOf(K key) => fields.errorOf(key);
+
+  /// Returns `true` if all fields are valid and non-empty (or valid optional).
+  bool get isValid => fields.areAllFieldsValid;
+
+  /// Returns `true` if all fields are free of validation errors.
+  bool get isCleanAndValid => fields.isCleanAndValid;
+
+  /// Returns `true` if any field in the form has been modified from its initial value.
+  bool get isDirty => fields.isDirty;
+
+  /// Returns `true` if any field is currently undergoing async validation.
+  bool get isValidating => fields.values.any((f) => f.isValidating);
+
+  /// Whether submission is currently in progress.
+  bool get isSubmitting => status.isSubmitting;
+
+  /// Whether the last submission attempt succeeded.
+  bool get isSuccess => status.isSuccess;
+
+  /// Whether the last submission attempt failed.
+  bool get isFailure => status.isFailure;
+
+  /// Exports all field keys and their current values as a raw Map.
+  Map<K, Object?> get values => fields.toValuesMap();
+
+  /// Returns a copy of this form state with updated fields or status.
+  NeatFormState<K> copyWith({
+    Map<K, NeatFieldState<Object?>>? fields,
+    NeatSubmissionStatus? status,
+  }) {
+    return NeatFormState<K>(
+      fields: fields ?? this.fields,
+      status: status ?? this.status,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NeatFormState<K> &&
+          runtimeType == other.runtimeType &&
+          status == other.status &&
+          _fieldsEqual(fields, other.fields);
+
+  @override
+  int get hashCode {
+    var fieldsHash = 0;
+    for (final entry in fields.entries) {
+      fieldsHash ^= Object.hash(entry.key, entry.value);
+    }
+    return Object.hash(fieldsHash, status);
+  }
+
+  static bool _fieldsEqual<K>(
+    Map<K, NeatFieldState<Object?>> a,
+    Map<K, NeatFieldState<Object?>> b,
+  ) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (b[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  @override
+  String toString() =>
+      'NeatFormState(status: $status, fields: ${fields.length}, isValid: $isValid, isDirty: $isDirty)';
 }

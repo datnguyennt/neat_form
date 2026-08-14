@@ -2,9 +2,9 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.0.0-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.1.0--preview.2-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 72 Passed](https://img.shields.io/badge/tests-72%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 78 Passed](https://img.shields.io/badge/tests-78%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
@@ -58,7 +58,7 @@ Add `neat_form` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.0-preview.1
+  neat_form: ^1.1.0-preview.2
 ```
 
 Or run:
@@ -70,7 +70,67 @@ flutter pub add neat_form
 
 ### 🚀 Quick Start
 
-#### Approach 1: Flutter Native with `ListenableBuilder` (Recommended)
+#### ⚡ Approach 1: First-Class Riverpod Integration (Recommended)
+
+Leverage `NeatFormNotifierMixin<K>` and `NeatFormState.fromValues` for an ultra-clean Notifier with **zero boilerplate methods**:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neat_form/neat_form.dart';
+
+enum LoginFormKey { email, password }
+
+// 1. Ultra-clean Notifier: NO boilerplate methods, NO redundant code!
+class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>>
+    with NeatFormMixin<LoginFormKey>, NeatFormNotifierMixin<LoginFormKey> {
+  @override
+  NeatFormState<LoginFormKey> build() => NeatFormState.fromValues({
+        LoginFormKey.email: '',
+        LoginFormKey.password: '',
+      });
+
+  @override
+  Map<LoginFormKey, NeatValidator<Object?>> get validators => {
+        LoginFormKey.email: NeatValidators.combine([
+          NeatValidators.required(message: 'Email is required'),
+          NeatValidators.email(message: 'Invalid email address'),
+        ]),
+        LoginFormKey.password: NeatValidators.combine([
+          NeatValidators.required(message: 'Password is required'),
+          NeatValidators.minLength(8, message: 'Must be at least 8 characters'),
+        ]),
+      };
+}
+
+final loginNotifierProvider =
+    NotifierProvider<LoginNotifier, NeatFormState<LoginFormKey>>(LoginNotifier.new);
+
+// 2. UI with Surgical Rebuilding (Only the changed input rebuilds)
+class EmailInput extends ConsumerWidget {
+  const EmailInput({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ⚡ ONLY EmailInput will rebuild when email changes (Password change won't trigger rebuild!)
+    final email = ref.watch(
+      loginNotifierProvider.select((s) => s.field<String>(LoginFormKey.email)),
+    );
+
+    return TextField(
+      onChanged: (val) => ref.read(loginNotifierProvider.notifier).setField(LoginFormKey.email, val),
+      decoration: InputDecoration(
+        labelText: 'Email',
+        errorText: email.errorMessage, // ✨ Directly binds error message if visible
+      ),
+    );
+  }
+}
+```
+
+---
+
+#### Approach 2: Flutter Native with `ListenableBuilder` (No external state manager)
 
 ```dart
 import 'package:flutter/material.dart';
@@ -161,63 +221,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
       },
     );
   }
-}
-```
-
----
-
-#### Approach 2: With Riverpod (`NeatFormMixin`)
-
-```dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:neat_form/neat_form.dart';
-
-enum SignupKey { email, password, confirmPassword }
-
-class SignupState {
-  final Map<SignupKey, NeatFieldState<Object?>> fields;
-
-  const SignupState({
-    this.fields = const {
-      SignupKey.email: NeatFieldState<String>(value: ''),
-      SignupKey.password: NeatFieldState<String>(value: ''),
-      SignupKey.confirmPassword: NeatFieldState<String>(value: ''),
-    },
-  });
-
-  bool get isValid => fields.areAllFieldsValid;
-}
-
-class SignupNotifier extends Notifier<SignupState> with NeatFormMixin<SignupKey> {
-  @override
-  SignupState build() => const SignupState();
-
-  @override
-  Map<SignupKey, NeatFieldState<Object?>> get fields => state.fields;
-
-  @override
-  void updateStateWithFields(Map<SignupKey, NeatFieldState<Object?>> newFields) {
-    state = SignupState(fields: newFields);
-  }
-
-  @override
-  Map<SignupKey, NeatValidator<Object?>> get validators => {
-        SignupKey.email: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.email(),
-        ]),
-        SignupKey.password: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.minLength(8),
-        ]),
-        SignupKey.confirmPassword: NeatValidators.match(
-          () => getField<String>(SignupKey.password).value,
-          message: 'Passwords do not match',
-        ),
-      };
-
-  void onEmailChanged(String val) => setAndValidateField(SignupKey.email, val);
-  void onPasswordChanged(String val) => setAndValidateField(SignupKey.password, val);
 }
 ```
 

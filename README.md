@@ -2,9 +2,9 @@
 
 Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạnh mẽ, type-safe (100% `Object?`) dành cho **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.0.0-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.1.0--preview.2-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 72 Passed](https://img.shields.io/badge/tests-72%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 78 Passed](https://img.shields.io/badge/tests-78%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](#tiếng-việt) | [English](README_EN.md)**
@@ -59,7 +59,7 @@ Thêm `neat_form` vào file `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.0-preview.1
+  neat_form: ^1.1.0-preview.2
 ```
 
 Hoặc chạy lệnh:
@@ -71,7 +71,67 @@ flutter pub add neat_form
 
 ### 🚀 Hướng dẫn sử dụng nhanh
 
-#### Cách 1: Dùng trực tiếp với Flutter `ListenableBuilder` (Khuyên dùng)
+#### ⚡ Cách 1: Tích hợp hoàn hảo với Riverpod (Khuyên Dùng / First-Class Citizen)
+
+Sử dụng `NeatFormNotifierMixin<K>` và `NeatFormState.fromValues` để viết Notifier siêu gọn, **không cần viết bất kỳ hàm boilerplate nào**:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neat_form/neat_form.dart';
+
+enum LoginFormKey { email, password }
+
+// 1. Notifier siêu sạch: KHÔNG hàm thừa, KHÔNG lặp code!
+class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>>
+    with NeatFormMixin<LoginFormKey>, NeatFormNotifierMixin<LoginFormKey> {
+  @override
+  NeatFormState<LoginFormKey> build() => NeatFormState.fromValues({
+        LoginFormKey.email: '',
+        LoginFormKey.password: '',
+      });
+
+  @override
+  Map<LoginFormKey, NeatValidator<Object?>> get validators => {
+        LoginFormKey.email: NeatValidators.combine([
+          NeatValidators.required(message: 'Email không được để trống'),
+          NeatValidators.email(message: 'Email không hợp lệ'),
+        ]),
+        LoginFormKey.password: NeatValidators.combine([
+          NeatValidators.required(message: 'Mật khẩu không được để trống'),
+          NeatValidators.minLength(8, message: 'Tối thiểu 8 ký tự'),
+        ]),
+      };
+}
+
+final loginNotifierProvider =
+    NotifierProvider<LoginNotifier, NeatFormState<LoginFormKey>>(LoginNotifier.new);
+
+// 2. UI với Surgical Rebuild (Chỉ rebuild đúng ô input bị thay đổi nhờ select)
+class EmailInput extends ConsumerWidget {
+  const EmailInput({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ⚡ CHỈ rebuild EmailInput khi ô Email thay đổi (Password đổi sẽ KHÔNG render lại!)
+    final email = ref.watch(
+      loginNotifierProvider.select((s) => s.field<String>(LoginFormKey.email)),
+    );
+
+    return TextField(
+      onChanged: (val) => ref.read(loginNotifierProvider.notifier).setField(LoginFormKey.email, val),
+      decoration: InputDecoration(
+        labelText: 'Email',
+        errorText: email.errorMessage, // ✨ Tự động lấy message lỗi nếu có
+      ),
+    );
+  }
+}
+```
+
+---
+
+#### Cách 2: Dùng trực tiếp với Flutter `ListenableBuilder` (Không cần State Management)
 
 ```dart
 import 'package:flutter/material.dart';
@@ -167,63 +227,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
 
 ---
 
-#### Cách 2: Tích hợp với Riverpod (`NeatFormMixin`)
-
-```dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:neat_form/neat_form.dart';
-
-enum SignupKey { email, password, confirmPassword }
-
-class SignupState {
-  final Map<SignupKey, NeatFieldState<Object?>> fields;
-
-  const SignupState({
-    this.fields = const {
-      SignupKey.email: NeatFieldState<String>(value: ''),
-      SignupKey.password: NeatFieldState<String>(value: ''),
-      SignupKey.confirmPassword: NeatFieldState<String>(value: ''),
-    },
-  });
-
-  bool get isValid => fields.areAllFieldsValid;
-}
-
-class SignupNotifier extends Notifier<SignupState> with NeatFormMixin<SignupKey> {
-  @override
-  SignupState build() => const SignupState();
-
-  @override
-  Map<SignupKey, NeatFieldState<Object?>> get fields => state.fields;
-
-  @override
-  void updateStateWithFields(Map<SignupKey, NeatFieldState<Object?>> newFields) {
-    state = SignupState(fields: newFields);
-  }
-
-  @override
-  Map<SignupKey, NeatValidator<Object?>> get validators => {
-        SignupKey.email: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.email(),
-        ]),
-        SignupKey.password: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.minLength(8),
-        ]),
-        SignupKey.confirmPassword: NeatValidators.match(
-          () => getField<String>(SignupKey.password).value,
-          message: 'Mật khẩu xác nhận không khớp',
-        ),
-      };
-
-  void onEmailChanged(String val) => setAndValidateField(SignupKey.email, val);
-  void onPasswordChanged(String val) => setAndValidateField(SignupKey.password, val);
-}
-```
-
----
-
 #### Cách 3: Tích hợp với BLoC / Cubit
 
 ```dart
@@ -232,21 +235,16 @@ import 'package:neat_form/neat_form.dart';
 
 enum ProfileKey { name, age }
 
-class ProfileState {
-  final Map<ProfileKey, NeatFieldState<Object?>> fields;
-  final NeatSubmissionStatus status;
-
-  const ProfileState({
-    this.fields = const {
-      ProfileKey.name: NeatFieldState<String>(value: ''),
-      ProfileKey.age: NeatFieldState<int?>(value: null),
-    },
-    this.status = NeatSubmissionStatus.idle,
-  });
-}
-
-class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
-  ProfileCubit() : super(const ProfileState());
+class ProfileCubit extends Cubit<NeatFormState<ProfileKey>> with NeatFormMixin<ProfileKey> {
+  ProfileCubit()
+      : super(
+          const NeatFormState(
+            fields: {
+              ProfileKey.name: NeatFieldState<String>(value: ''),
+              ProfileKey.age: NeatFieldState<int?>(value: null),
+            },
+          ),
+        );
 
   @override
   Map<ProfileKey, NeatFieldState<Object?>> get fields => state.fields;
@@ -256,12 +254,12 @@ class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
 
   @override
   void updateStateWithFields(Map<ProfileKey, NeatFieldState<Object?>> newFields) {
-    emit(ProfileState(fields: newFields, status: state.status));
+    emit(state.copyWith(fields: newFields));
   }
 
   @override
   void updateSubmissionStatus(NeatSubmissionStatus status) {
-    emit(ProfileState(fields: state.fields, status: status));
+    emit(state.copyWith(status: status));
   }
 
   @override

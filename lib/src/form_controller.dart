@@ -335,6 +335,35 @@ mixin NeatFormMixin<K> {
   }
 }
 
+/// A specialized mixin for **Riverpod** (`Notifier<NeatFormState<K>>`), **StateNotifier**,
+/// or **BLoC/Cubit** (`Cubit<NeatFormState<K>>`) holding a standard [NeatFormState<K>].
+///
+/// Eliminates boilerplate by automatically mapping [fields], [submissionStatus],
+/// [updateStateWithFields], and [updateSubmissionStatus] to [state].
+mixin NeatFormNotifierMixin<K> on NeatFormMixin<K> {
+  /// The current state of the form holder (e.g. Riverpod `state`).
+  NeatFormState<K> get state;
+
+  /// Setter to update the state of the form holder (e.g. Riverpod `state = ...`).
+  set state(NeatFormState<K> value);
+
+  @override
+  Map<K, NeatFieldState<Object?>> get fields => state.fields;
+
+  @override
+  NeatSubmissionStatus get submissionStatus => state.status;
+
+  @override
+  void updateStateWithFields(Map<K, NeatFieldState<Object?>> newFields) {
+    state = state.copyWith(fields: newFields);
+  }
+
+  @override
+  void updateSubmissionStatus(NeatSubmissionStatus status) {
+    state = state.copyWith(status: status);
+  }
+}
+
 /// A Flutter-ready controller for managing form state without third-party state managers.
 ///
 /// Implements Flutter's [Listenable] (via [ChangeNotifier]) so it plugs directly
@@ -417,6 +446,11 @@ extension NeatFormFieldMapExtension<K> on Map<K, NeatFieldState<Object?>> {
   /// True if all fields have no errors (regardless of whether they are filled).
   bool get isCleanAndValid {
     return values.every((field) => field.isValid);
+  }
+
+  /// True if any field's value has changed from its initial value.
+  bool get isDirty {
+    return values.any((field) => field.isDirty);
   }
 
   /// Safely gets a strongly typed field state by key.
