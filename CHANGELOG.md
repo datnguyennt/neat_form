@@ -1,3 +1,10 @@
+# 1.1.0-preview.3
+
+- **Direct Error Access on `NeatFieldState`:** Added `errorMessage` getter for clean binding directly to `InputDecoration.errorText`.
+- **Expanded Test Coverage:** Added comprehensive nested state management tests (`test/nested_and_state_management_test.dart`) covering complex field updates, Riverpod/custom notifier bindings, and race condition handling (increasing test suite to 83+ tests).
+- **Widget Test Compatibility:** Configured `InkRipple.splashFactory` in the showcase example app to avoid fragment shader decoding issues (`ink_sparkle.frag`) in headless and test environments.
+- **Documentation & Examples:** Updated README and showcase code examples to reflect the latest clean API patterns.
+
 # 1.1.0-preview.2
 
 - **Ultra-Clean Riverpod Support:**

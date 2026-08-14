@@ -59,7 +59,7 @@ Thêm `neat_form` vào file `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.0-preview.2
+  neat_form: ^1.1.0-preview.3
 ```
 
 Hoặc chạy lệnh:
