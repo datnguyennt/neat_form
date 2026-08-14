@@ -58,7 +58,7 @@ Add `neat_form` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.0.0
+  neat_form: ^1.1.0-preview.1
 ```
 
 Or run:
