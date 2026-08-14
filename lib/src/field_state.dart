@@ -197,7 +197,7 @@ class NeatFieldState<T> {
   /// Backward compatible alias for [isErrorVisible].
   bool get isShowError => isErrorVisible;
 
-  /// Directly returns [error.message] if [isErrorVisible] is true, otherwise `null`.
+  /// Directly returns [NeatValidationError.message] if [isErrorVisible] is true, otherwise `null`.
   ///
   /// Perfect for binding directly to Flutter's `InputDecoration.errorText`:
   /// ```dart

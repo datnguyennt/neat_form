@@ -7,7 +7,7 @@ version:
   revision: "c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80"
   channel: "stable"
 
-project_type: app
+project_type: package
 
 # Tracks metadata for the flutter migrate command
 migration:

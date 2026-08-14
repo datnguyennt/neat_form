@@ -71,9 +71,10 @@ flutter pub add neat_form
 
 ### 🚀 Hướng dẫn sử dụng nhanh
 
-#### ⚡ Cách 1: Tích hợp hoàn hảo với Riverpod (Khuyên Dùng / First-Class Citizen)
+#### ⚡ Cách 1: Tích hợp hoàn hảo với Riverpod (Notifier & Freezed)
 
-Sử dụng `NeatFormNotifierMixin<K>` và `NeatFormState.fromValues` để viết Notifier siêu gọn, **không cần viết bất kỳ hàm boilerplate nào**:
+##### A. Standalone Form State (Dạng Form Đơn - Siêu Gọn Chỉ 1 Mixin)
+Sử dụng `NeatFormNotifierMixin<K>` — **chỉ cần 1 mixin duy nhất**, không cần viết bất kỳ hàm boilerplate nào:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -82,9 +83,9 @@ import 'package:neat_form/neat_form.dart';
 
 enum LoginFormKey { email, password }
 
-// 1. Notifier siêu sạch: KHÔNG hàm thừa, KHÔNG lặp code!
+// 1. Notifier siêu sạch: Đúng 1 mixin, KHÔNG boilerplate!
 class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>>
-    with NeatFormMixin<LoginFormKey>, NeatFormNotifierMixin<LoginFormKey> {
+    with NeatFormNotifierMixin<LoginFormKey> {
   @override
   NeatFormState<LoginFormKey> build() => NeatFormState.fromValues({
         LoginFormKey.email: '',
@@ -113,7 +114,6 @@ class EmailInput extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ⚡ CHỈ rebuild EmailInput khi ô Email thay đổi (Password đổi sẽ KHÔNG render lại!)
     final email = ref.watch(
       loginNotifierProvider.select((s) => s.field<String>(LoginFormKey.email)),
     );
@@ -122,16 +122,111 @@ class EmailInput extends ConsumerWidget {
       onChanged: (val) => ref.read(loginNotifierProvider.notifier).setField(LoginFormKey.email, val),
       decoration: InputDecoration(
         labelText: 'Email',
-        errorText: email.errorMessage, // ✨ Tự động lấy message lỗi nếu có
+        errorText: email.errorMessage, // ✨ Tự động hiển thị message lỗi nếu có
       ),
     );
   }
 }
 ```
 
+##### B. Nested / Freezed Screen State (Khi Form nằm bên trong State màn hình)
+Nếu bạn dùng **Freezed** để quản lý State màn hình (`LoginScreenState` chứa form và các biến khác), dùng `NeatNestedFormNotifierMixin<S, K>`:
+
+```dart
+// 1. Khai báo Freezed State
+@freezed
+class LoginScreenState with _$LoginScreenState {
+  const factory LoginScreenState({
+    @Default(false) bool isSubmitting,
+    @Default(false) bool rememberMe,
+    String? serverError,
+    required NeatFormState<LoginFormKey> form,
+  }) = _LoginScreenState;
+}
+
+// 2. Notifier lồng Freezed State mượt mà
+class LoginScreenNotifier extends Notifier<LoginScreenState>
+    with NeatNestedFormNotifierMixin<LoginScreenState, LoginFormKey> {
+  @override
+  LoginScreenState build() => LoginScreenState(
+        form: NeatFormState.fromValues({
+          LoginFormKey.email: '',
+          LoginFormKey.password: '',
+        }),
+      );
+
+  @override
+  NeatFormState<LoginFormKey> getForm(LoginScreenState state) => state.form;
+
+  @override
+  LoginScreenState updateForm(LoginScreenState state, NeatFormState<LoginFormKey> form) =>
+      state.copyWith(form: form);
+
+  @override
+  Map<LoginFormKey, NeatValidator<Object?>> get validators => { ... };
+}
+```
+
 ---
 
-#### Cách 2: Dùng trực tiếp với Flutter `ListenableBuilder` (Không cần State Management)
+#### ⚡ Cách 2: Tích hợp với BLoC / Cubit (Hỗ trợ cả Standalone & Freezed)
+
+##### A. Standalone Cubit Form (Tự động kết nối `emit()`)
+Sử dụng `NeatFormCubitMixin<K>` — không cần override hàm update hay emit thủ công:
+
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:neat_form/neat_form.dart';
+
+enum ProfileKey { name, age }
+
+class ProfileCubit extends Cubit<NeatFormState<ProfileKey>>
+    with NeatFormCubitMixin<ProfileKey> {
+  ProfileCubit()
+      : super(
+          NeatFormState.fromValues({
+            ProfileKey.name: '',
+            ProfileKey.age: null,
+          }),
+        );
+
+  @override
+  Map<ProfileKey, NeatValidator<Object?>> get validators => {
+        ProfileKey.name: NeatValidators.required(message: 'Tên không được để trống'),
+        ProfileKey.age: NeatValidators.combine([
+          NeatValidators.required(),
+          NeatValidators.minValue(18, message: 'Phải từ 18 tuổi trở lên'),
+        ]),
+      };
+
+  void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
+  void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
+}
+```
+
+##### B. Cubit với Freezed Screen State
+Sử dụng `NeatNestedFormCubitMixin<S, K>` cho Cubit khi State là một Freezed class:
+
+```dart
+class ProfileCubit extends Cubit<ProfileScreenState>
+    with NeatNestedFormCubitMixin<ProfileScreenState, ProfileKey> {
+  ProfileCubit() : super(ProfileScreenState(form: NeatFormState.fromValues({ ... })));
+
+  @override
+  NeatFormState<ProfileKey> getForm(ProfileScreenState state) => state.form;
+
+  @override
+  ProfileScreenState updateForm(ProfileScreenState state, NeatFormState<ProfileKey> form) =>
+      state.copyWith(form: form);
+
+  @override
+  Map<ProfileKey, NeatValidator<Object?>> get validators => { ... };
+}
+```
+
+---
+
+#### ⚡ Cách 3: Flutter Native với `ListenableBuilder` (Không cần State Management)
 
 ```dart
 import 'package:flutter/material.dart';
@@ -191,7 +286,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
               onChanged: (val) => _form.setField(LoginFormKey.email, val),
               decoration: InputDecoration(
                 labelText: 'Email',
-                errorText: emailField.isErrorVisible ? emailField.error?.message : null,
+                errorText: emailField.errorMessage,
               ),
             ),
             TextField(
@@ -199,7 +294,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
               onChanged: (val) => _form.setField(LoginFormKey.password, val),
               decoration: InputDecoration(
                 labelText: 'Mật khẩu',
-                errorText: passwordField.isErrorVisible ? passwordField.error?.message : null,
+                errorText: passwordField.errorMessage,
               ),
             ),
             ElevatedButton(
@@ -208,7 +303,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
                   : () async {
                       await _form.submitForm(
                         onSubmit: (values) async {
-                          // Gọi API Backend
                           print('Dữ liệu form hợp lệ: $values');
                         },
                       );
@@ -222,57 +316,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
       },
     );
   }
-}
-```
-
----
-
-#### Cách 3: Tích hợp với BLoC / Cubit
-
-```dart
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:neat_form/neat_form.dart';
-
-enum ProfileKey { name, age }
-
-class ProfileCubit extends Cubit<NeatFormState<ProfileKey>> with NeatFormMixin<ProfileKey> {
-  ProfileCubit()
-      : super(
-          const NeatFormState(
-            fields: {
-              ProfileKey.name: NeatFieldState<String>(value: ''),
-              ProfileKey.age: NeatFieldState<int?>(value: null),
-            },
-          ),
-        );
-
-  @override
-  Map<ProfileKey, NeatFieldState<Object?>> get fields => state.fields;
-
-  @override
-  NeatSubmissionStatus get submissionStatus => state.status;
-
-  @override
-  void updateStateWithFields(Map<ProfileKey, NeatFieldState<Object?>> newFields) {
-    emit(state.copyWith(fields: newFields));
-  }
-
-  @override
-  void updateSubmissionStatus(NeatSubmissionStatus status) {
-    emit(state.copyWith(status: status));
-  }
-
-  @override
-  Map<ProfileKey, NeatValidator<Object?>> get validators => {
-        ProfileKey.name: NeatValidators.required(message: 'Tên không được để trống'),
-        ProfileKey.age: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.minValue(18, message: 'Phải từ 18 tuổi trở lên'),
-        ]),
-      };
-
-  void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
-  void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
 }
 ```
 
@@ -339,6 +382,58 @@ resolver.register(
 
 // Sử dụng tại UI
 final errorText = resolver.resolve(context, fieldState.error!, fieldName: 'Mật khẩu');
+```
+
+---
+
+### 📊 Giám sát sự kiện & Analytics (Form Observer)
+
+`neat_form` cung cấp `NeatFormObserver<K>` để theo dõi toàn bộ vòng đời form, sự kiện thay đổi giá trị, lỗi validation, và trạng thái submit — lý tưởng cho analytics, telemetry và debug logging:
+
+```dart
+class AppFormObserver extends NeatFormObserver<LoginFormKey> {
+  @override
+  void onFieldChanged(LoginFormKey key, Object? value) {
+    debugPrint('Field [${key.name}] changed to: $value');
+  }
+
+  @override
+  void onValidationError(LoginFormKey key, NeatValidationError error) {
+    debugPrint('Validation failed on [${key.name}]: ${error.code}');
+  }
+
+  @override
+  void onSubmissionStatusChanged(NeatSubmissionStatus status) {
+    debugPrint('Form submission status: ${status.name}');
+  }
+
+  @override
+  void onFormSubmitted(Map<LoginFormKey, Object?> values, {required bool isValid}) {
+    debugPrint('Form submitted: isValid=$isValid, values=$values');
+  }
+}
+```
+
+---
+
+### ⚡ Kiểm tra bất đồng bộ chống Race-Condition (Async Validation)
+
+Sử dụng `validateFieldAsync` với cơ chế sequence token tự động vô hiệu hóa kết quả của các request cũ nếu người dùng tiếp tục gõ phím:
+
+```dart
+await form.validateFieldAsync<String>(
+  SignupFormKey.username,
+  (username) async {
+    final isTaken = await api.checkUsernameTaken(username);
+    if (isTaken) {
+      return const NeatValidationError(
+        'username_taken',
+        message: 'Tên đăng nhập đã tồn tại',
+      );
+    }
+    return null;
+  },
+);
 ```
 
 ---

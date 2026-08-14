@@ -70,9 +70,10 @@ flutter pub add neat_form
 
 ### 🚀 Quick Start
 
-#### ⚡ Approach 1: First-Class Riverpod Integration (Recommended)
+#### ⚡ Approach 1: First-Class Riverpod Integration (Notifier & Freezed)
 
-Leverage `NeatFormNotifierMixin<K>` and `NeatFormState.fromValues` for an ultra-clean Notifier with **zero boilerplate methods**:
+##### A. Standalone Form State (Ultra-Clean Single Mixin)
+Leverage `NeatFormNotifierMixin<K>` — **only 1 mixin required**, zero boilerplate methods:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -81,9 +82,9 @@ import 'package:neat_form/neat_form.dart';
 
 enum LoginFormKey { email, password }
 
-// 1. Ultra-clean Notifier: NO boilerplate methods, NO redundant code!
+// 1. Ultra-clean Notifier: Exactly 1 mixin, ZERO boilerplate!
 class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>>
-    with NeatFormMixin<LoginFormKey>, NeatFormNotifierMixin<LoginFormKey> {
+    with NeatFormNotifierMixin<LoginFormKey> {
   @override
   NeatFormState<LoginFormKey> build() => NeatFormState.fromValues({
         LoginFormKey.email: '',
@@ -112,7 +113,6 @@ class EmailInput extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ⚡ ONLY EmailInput will rebuild when email changes (Password change won't trigger rebuild!)
     final email = ref.watch(
       loginNotifierProvider.select((s) => s.field<String>(LoginFormKey.email)),
     );
@@ -128,9 +128,104 @@ class EmailInput extends ConsumerWidget {
 }
 ```
 
+##### B. Nested / Freezed Screen State (When Form is part of Screen State)
+If your screen uses a **Freezed** data class (`LoginScreenState` containing the form plus other screen properties), use `NeatNestedFormNotifierMixin<S, K>`:
+
+```dart
+// 1. Define Freezed Screen State
+@freezed
+class LoginScreenState with _$LoginScreenState {
+  const factory LoginScreenState({
+    @Default(false) bool isSubmitting,
+    @Default(false) bool rememberMe,
+    String? serverError,
+    required NeatFormState<LoginFormKey> form,
+  }) = _LoginScreenState;
+}
+
+// 2. Notifier managing nested form state seamlessly
+class LoginScreenNotifier extends Notifier<LoginScreenState>
+    with NeatNestedFormNotifierMixin<LoginScreenState, LoginFormKey> {
+  @override
+  LoginScreenState build() => LoginScreenState(
+        form: NeatFormState.fromValues({
+          LoginFormKey.email: '',
+          LoginFormKey.password: '',
+        }),
+      );
+
+  @override
+  NeatFormState<LoginFormKey> getForm(LoginScreenState state) => state.form;
+
+  @override
+  LoginScreenState updateForm(LoginScreenState state, NeatFormState<LoginFormKey> form) =>
+      state.copyWith(form: form);
+
+  @override
+  Map<LoginFormKey, NeatValidator<Object?>> get validators => { ... };
+}
+```
+
 ---
 
-#### Approach 2: Flutter Native with `ListenableBuilder` (No external state manager)
+#### ⚡ Approach 2: BLoC / Cubit (Standalone & Freezed Support)
+
+##### A. Standalone Cubit Form (Auto-wires `emit()`)
+Use `NeatFormCubitMixin<K>` — no manual state mapping or boilerplate methods:
+
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:neat_form/neat_form.dart';
+
+enum ProfileKey { name, age }
+
+class ProfileCubit extends Cubit<NeatFormState<ProfileKey>>
+    with NeatFormCubitMixin<ProfileKey> {
+  ProfileCubit()
+      : super(
+          NeatFormState.fromValues({
+            ProfileKey.name: '',
+            ProfileKey.age: null,
+          }),
+        );
+
+  @override
+  Map<ProfileKey, NeatValidator<Object?>> get validators => {
+        ProfileKey.name: NeatValidators.required(message: 'Name is required'),
+        ProfileKey.age: NeatValidators.combine([
+          NeatValidators.required(),
+          NeatValidators.minValue(18, message: 'Must be 18+'),
+        ]),
+      };
+
+  void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
+  void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
+}
+```
+
+##### B. Cubit with Freezed Screen State
+Use `NeatNestedFormCubitMixin<S, K>` when Cubit manages a Freezed parent state:
+
+```dart
+class ProfileCubit extends Cubit<ProfileScreenState>
+    with NeatNestedFormCubitMixin<ProfileScreenState, ProfileKey> {
+  ProfileCubit() : super(ProfileScreenState(form: NeatFormState.fromValues({ ... })));
+
+  @override
+  NeatFormState<ProfileKey> getForm(ProfileScreenState state) => state.form;
+
+  @override
+  ProfileScreenState updateForm(ProfileScreenState state, NeatFormState<ProfileKey> form) =>
+      state.copyWith(form: form);
+
+  @override
+  Map<ProfileKey, NeatValidator<Object?>> get validators => { ... };
+}
+```
+
+---
+
+#### ⚡ Approach 3: Flutter Native with `ListenableBuilder` (No external state manager)
 
 ```dart
 import 'package:flutter/material.dart';
@@ -190,7 +285,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
               onChanged: (val) => _form.setField(LoginFormKey.email, val),
               decoration: InputDecoration(
                 labelText: 'Email',
-                errorText: emailField.isErrorVisible ? emailField.error?.message : null,
+                errorText: emailField.errorMessage,
               ),
             ),
             TextField(
@@ -198,7 +293,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
               onChanged: (val) => _form.setField(LoginFormKey.password, val),
               decoration: InputDecoration(
                 labelText: 'Password',
-                errorText: passwordField.isErrorVisible ? passwordField.error?.message : null,
+                errorText: passwordField.errorMessage,
               ),
             ),
             ElevatedButton(
@@ -207,7 +302,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
                   : () async {
                       await _form.submitForm(
                         onSubmit: (values) async {
-                          // Submit to backend API
                           print('Submitted values: $values');
                         },
                       );
@@ -221,62 +315,6 @@ class _LoginFormPageState extends State<LoginFormPage> {
       },
     );
   }
-}
-```
-
----
-
-#### Approach 3: With BLoC / Cubit
-
-```dart
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:neat_form/neat_form.dart';
-
-enum ProfileKey { name, age }
-
-class ProfileState {
-  final Map<ProfileKey, NeatFieldState<Object?>> fields;
-  final NeatSubmissionStatus status;
-
-  const ProfileState({
-    this.fields = const {
-      ProfileKey.name: NeatFieldState<String>(value: ''),
-      ProfileKey.age: NeatFieldState<int?>(value: null),
-    },
-    this.status = NeatSubmissionStatus.idle,
-  });
-}
-
-class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
-  ProfileCubit() : super(const ProfileState());
-
-  @override
-  Map<ProfileKey, NeatFieldState<Object?>> get fields => state.fields;
-
-  @override
-  NeatSubmissionStatus get submissionStatus => state.status;
-
-  @override
-  void updateStateWithFields(Map<ProfileKey, NeatFieldState<Object?>> newFields) {
-    emit(ProfileState(fields: newFields, status: state.status));
-  }
-
-  @override
-  void updateSubmissionStatus(NeatSubmissionStatus status) {
-    emit(ProfileState(fields: state.fields, status: status));
-  }
-
-  @override
-  Map<ProfileKey, NeatValidator<Object?>> get validators => {
-        ProfileKey.name: NeatValidators.required(message: 'Name is required'),
-        ProfileKey.age: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.minValue(18, message: 'Must be 18+'),
-        ]),
-      };
-
-  void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
-  void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
 }
 ```
 
@@ -343,6 +381,58 @@ resolver.register(
 
 // Resolve in UI
 final errorText = resolver.resolve(context, fieldState.error!, fieldName: 'Password');
+```
+
+---
+
+### 📊 Event Monitoring & Telemetry (Form Observer)
+
+`neat_form` provides `NeatFormObserver<K>` to track the entire form lifecycle, field updates, validation errors, and submission status — ideal for telemetry, analytics, and debugging:
+
+```dart
+class AppFormObserver extends NeatFormObserver<LoginFormKey> {
+  @override
+  void onFieldChanged(LoginFormKey key, Object? value) {
+    debugPrint('Field [${key.name}] changed to: $value');
+  }
+
+  @override
+  void onValidationError(LoginFormKey key, NeatValidationError error) {
+    debugPrint('Validation error on [${key.name}]: ${error.code}');
+  }
+
+  @override
+  void onSubmissionStatusChanged(NeatSubmissionStatus status) {
+    debugPrint('Form submission status: ${status.name}');
+  }
+
+  @override
+  void onFormSubmitted(Map<LoginFormKey, Object?> values, {required bool isValid}) {
+    debugPrint('Form submitted: isValid=$isValid, values=$values');
+  }
+}
+```
+
+---
+
+### ⚡ Async Validation with Race-Condition Protection
+
+Use `validateFieldAsync` with automatic sequence token invalidation so out-of-order network responses never corrupt newer user input:
+
+```dart
+await form.validateFieldAsync<String>(
+  SignupFormKey.username,
+  (username) async {
+    final isTaken = await api.checkUsernameTaken(username);
+    if (isTaken) {
+      return const NeatValidationError(
+        'username_taken',
+        message: 'Username is already taken',
+      );
+    }
+    return null;
+  },
+);
 ```
 
 ---

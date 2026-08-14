@@ -152,7 +152,7 @@ class NeatValidators {
     r'[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}]',
     unicode: true,
   );
-  static final RegExp _htmlTagRegExp = RegExp(r'<[^>]*>');
+  static final RegExp _htmlTagRegExp = RegExp('<[^>]*>');
 
   // --- Combinators ---
 
@@ -473,10 +473,10 @@ class NeatValidators {
       if (value is! String?) return null;
       if (value == null || value.isEmpty) return null;
 
-      final upperCount = value.split('').where((c) => c.contains(RegExp(r'[A-Z]'))).length;
-      final lowerCount = value.split('').where((c) => c.contains(RegExp(r'[a-z]'))).length;
-      final digitCount = value.split('').where((c) => c.contains(RegExp(r'[0-9]'))).length;
-      final specialCount = value.split('').where((c) => _defaultSpecialCharsRegExp.hasMatch(c)).length;
+      final upperCount = value.split('').where((c) => c.contains(RegExp('[A-Z]'))).length;
+      final lowerCount = value.split('').where((c) => c.contains(RegExp('[a-z]'))).length;
+      final digitCount = value.split('').where((c) => c.contains(RegExp('[0-9]'))).length;
+      final specialCount = value.split('').where(_defaultSpecialCharsRegExp.hasMatch).length;
 
       if (upperCount < minUppercase ||
           lowerCount < minLowercase ||
