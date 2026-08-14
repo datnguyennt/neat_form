@@ -18,7 +18,14 @@
 - 🔒 **Type-Safe & Immutable (100% `Object?` - No `dynamic`):** Kiểm tra kiểu dữ liệu tĩnh lúc compile-time với `NeatFieldState<T>` và `NeatValidator<T>`.
 - 🌐 **Localization & Parameter Interpolation:** Lỗi validation trả về `code` và `params`, `NeatErrorResolver` tự động thay thế template `{minLength}`.
 - ⚡ **Tương thích mọi State Management:** Hoạt động mượt mà với **Riverpod**, **Bloc/Cubit**, **ValueNotifier**, hoặc dùng độc lập với `NeatFormController`.
-- 🛠️ **Bộ Validators phong phú:** `required()`, `email()`, `minLength()`, `maxLength()`, `lengthRange()`, `minValue()`, `maxValue()`, `match()` (khớp mật khẩu), `pattern()` (Regex), `numeric()`, `url()`, `noSpecialChars()`, `alphanumericOnly()`, `noSpaces()`, `blacklist()`, `when()`, và `combine()`.
+- 🛠️ **Bộ Validators toàn diện (25+ built-in rules):**
+  - **Chuỗi:** `required()`, `notBlank()`, `exactLength()`, `minLength()`, `maxLength()`, `lengthRange()`, `startsWith()`, `endsWith()`, `contains()`, `notContains()`, `latinOnly()`, `noEmoji()`.
+  - **Định dạng & Bảo mật:** `email()`, `phone()`, `passwordStrength()`, `creditCard()` (Luhn Algorithm), `url()`, `numeric()`, `alphanumericOnly()`, `noSpecialChars()`, `noSpaces()`, `blacklist()`, `noHtml()` (anti-XSS).
+  - **Số học:** `minValue()`, `maxValue()`, `positive()`, `negative()`, `multipleOf()`, `decimalPrecision()`.
+  - **Ngày tháng:** `pastDate()`, `futureDate()`, `dateRange()`.
+  - **Consent & Boolean:** `mustBeTrue()`, `mustBeFalse()`.
+  - **Mảng & Danh sách:** `minItems()`, `maxItems()`, `uniqueItems()`.
+  - **Nâng cao & Ghép nối:** `match()` (khớp mật khẩu), `when()` (có điều kiện), `combine()`, `custom()`.
 - ⏱️ **Hỗ trợ Async & Race Protection:** Validation bất đồng bộ tự động hủy bỏ kết quả cũ khi có request mới hoặc khi form reset.
 - 🔄 **Submission Lifecycle:** Tích hợp sẵn `submissionStatus` (`idle`, `submitting`, `success`, `failure`) trong `submitForm()`.
 
@@ -71,6 +78,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
         LoginFormKey.password: NeatValidators.combine([
           NeatValidators.required(message: 'Mật khẩu không được để trống'),
           NeatValidators.minLength(8, message: 'Tối thiểu {minLength} ký tự'),
+          NeatValidators.passwordStrength(message: 'Cần ít nhất 1 chữ hoa, 1 số, 1 ký tự đặc biệt'),
         ]),
       },
     );
@@ -244,6 +252,20 @@ class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
 
 ---
 
+### 📱 Ứng dụng Flutter Mẫu (Showcase App)
+
+Ứng dụng mẫu hoàn chỉnh đa màn hình nằm tại `example/lib/main.dart` bao gồm:
+1. **Tab 1: Auth & Registration**: Validation họ tên (latinOnly, noSpecialChars), email, username (async kiểm tra trùng lặp với loading & debounce), password strength, match confirm password, mustBeTrue điều khoản.
+2. **Tab 2: Fintech & Payment**: Thẻ tín dụng (Luhn algorithm), hạn thẻ (MM/YY), CVV 3 số, số tiền thanh toán (positive, decimalPrecision).
+3. **Tab 3: Booking & E-Commerce**: Đặt phòng ngày nhận/trả (Cross-field `checkout > checkin`), số khách, xuất hóa đơn VAT (`when` checkbox được chọn), tiện ích yêu cầu (`minItems`, `uniqueItems`).
+
+Để chạy ứng dụng mẫu:
+```bash
+flutter run example/lib/main.dart
+```
+
+---
+
 <br />
 <hr />
 <br />
@@ -262,7 +284,7 @@ class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
 - 🔒 **Type-Safe & Immutable (100% `Object?` - No `dynamic`):** Full compile-time static type safety with `NeatFieldState<T>` and `NeatValidator<T>`.
 - 🌐 **Localization & Parameter Interpolation:** Produces machine-readable error codes and params; `NeatErrorResolver` automatically interpolates placeholders like `{minLength}`.
 - ⚡ **State-Manager Agnostic:** Works seamlessly with **Riverpod**, **Bloc/Cubit**, **ValueNotifier**, or standalone with `NeatFormController`.
-- 🛠️ **Rich Built-in Validators:** `required()`, `email()`, `minLength()`, `maxLength()`, `lengthRange()`, `minValue()`, `maxValue()`, `match()`, `pattern()`, `numeric()`, `url()`, `noSpecialChars()`, `alphanumericOnly()`, `noSpaces()`, `blacklist()`, `when()`, and `combine()`.
+- 🛠️ **25+ Built-in Validators:** `required()`, `notBlank()`, `exactLength()`, `email()`, `phone()`, `minLength()`, `maxLength()`, `lengthRange()`, `startsWith()`, `endsWith()`, `contains()`, `notContains()`, `latinOnly()`, `noEmoji()`, `passwordStrength()`, `creditCard()`, `minValue()`, `maxValue()`, `positive()`, `negative()`, `multipleOf()`, `decimalPrecision()`, `pastDate()`, `futureDate()`, `dateRange()`, `mustBeTrue()`, `mustBeFalse()`, `minItems()`, `maxItems()`, `uniqueItems()`, `noHtml()`, `match()`, `when()`, `combine()`, and `custom()`.
 - ⏱️ **Sync & Async Validation:** Automatic race-condition protection for async validations and token invalidation on form reset.
 - 🔄 **Submission Lifecycle:** Built-in `submissionStatus` (`idle`, `submitting`, `success`, `failure`) inside `submitForm()`.
 

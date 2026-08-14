@@ -16,7 +16,14 @@ A clean, lightweight, type-safe form state management and validation library for
 - 🔒 **Type-Safe & Immutable (100% `Object?` - No `dynamic`):** Full compile-time static type safety with `NeatFieldState<T>` and `NeatValidator<T>`.
 - 🌐 **Localization & Parameter Interpolation:** Produces machine-readable error codes and params; `NeatErrorResolver` automatically interpolates placeholders like `{minLength}`.
 - ⚡ **State-Manager Agnostic:** Works seamlessly with **Riverpod**, **Bloc/Cubit**, **ValueNotifier**, or standalone with `NeatFormController`.
-- 🛠️ **Rich Built-in Validators:** `required()`, `email()`, `minLength()`, `maxLength()`, `lengthRange()`, `minValue()`, `maxValue()`, `match()`, `pattern()`, `numeric()`, `url()`, `noSpecialChars()`, `alphanumericOnly()`, `noSpaces()`, `blacklist()`, `when()`, and `combine()`.
+- 🛠️ **25+ Built-in Validators:**
+  - **Strings:** `required()`, `notBlank()`, `exactLength()`, `minLength()`, `maxLength()`, `lengthRange()`, `startsWith()`, `endsWith()`, `contains()`, `notContains()`, `latinOnly()`, `noEmoji()`.
+  - **Formats & Security:** `email()`, `phone()`, `passwordStrength()`, `creditCard()` (Luhn Algorithm), `url()`, `numeric()`, `alphanumericOnly()`, `noSpecialChars()`, `noSpaces()`, `blacklist()`, `noHtml()` (anti-XSS).
+  - **Numeric:** `minValue()`, `maxValue()`, `positive()`, `negative()`, `multipleOf()`, `decimalPrecision()`.
+  - **DateTime:** `pastDate()`, `futureDate()`, `dateRange()`.
+  - **Consent & Boolean:** `mustBeTrue()`, `mustBeFalse()`.
+  - **Collections:** `minItems()`, `maxItems()`, `uniqueItems()`.
+  - **Advanced & Combinators:** `match()` (confirm password), `when()` (conditional), `combine()`, `custom()`.
 - ⏱️ **Sync & Async Validation:** Automatic race-condition protection for async validations and token invalidation on form reset.
 - 🔄 **Submission Lifecycle:** Built-in `submissionStatus` (`idle`, `submitting`, `success`, `failure`) inside `submitForm()`.
 
@@ -237,6 +244,20 @@ class ProfileCubit extends Cubit<ProfileState> with NeatFormMixin<ProfileKey> {
   void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
   void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
 }
+```
+
+---
+
+### 📱 Flutter Showcase App
+
+A complete multi-screen demo application is available in `example/lib/main.dart`:
+- **Tab 1: Account & Auth Flow**: Full name validation (`latinOnly`, `noSpecialChars`), email, username (async uniqueness check with debounce), password strength, match confirm password, `mustBeTrue` terms consent.
+- **Tab 2: Fintech & Credit Card**: Credit card number (Luhn Algorithm), card expiry (MM/YY), CVV, payment amount (`positive`, `decimalPrecision`).
+- **Tab 3: Booking & E-Commerce**: Hotel reservation dates (Cross-field `checkout > checkin`), guest count, VAT invoice request (`when` switch is enabled), extra amenities (`minItems`, `uniqueItems`).
+
+Run the showcase application:
+```bash
+flutter run example/lib/main.dart
 ```
 
 ---

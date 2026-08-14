@@ -10,8 +10,8 @@ void main() {
       expect(requiredValidator(null), isNotNull);
       expect(requiredValidator(''), isNotNull);
       expect(requiredValidator('   '), isNotNull);
-      expect(requiredValidator(<dynamic>[]), isNotNull);
-      expect(requiredValidator(<String, dynamic>{}), isNotNull);
+      expect(requiredValidator(<Object?>[]), isNotNull);
+      expect(requiredValidator(<String, Object?>{}), isNotNull);
     });
 
     test('required returns null for valid inputs', () {
@@ -46,6 +46,196 @@ void main() {
       expect(error?.message, 'Must not be empty');
 
       expect(customRequired('valid string'), isNull);
+    });
+  });
+
+  group('NeatValidators.notBlank & exactLength', () {
+    test('notBlank detects spaces, tabs, and newlines', () {
+      final v = NeatValidators.notBlank();
+      expect(v(''), isNull); // empty handled by required
+      expect(v('   '), isNotNull);
+      expect(v('\t\n  '), isNotNull);
+      expect(v(' valid '), isNull);
+    });
+
+    test('exactLength checks exact character count', () {
+      final v = NeatValidators.exactLength(6);
+      expect(v('12345'), isNotNull);
+      expect(v('123456'), isNull);
+      expect(v('1234567'), isNotNull);
+      expect(v(null), isNull);
+    });
+  });
+
+  group('NeatValidators.phone', () {
+    test('validates standard phone numbers with or without +', () {
+      final v = NeatValidators.phone();
+      expect(v('0912345678'), isNull);
+      expect(v('+84912345678'), isNull);
+      expect(v('(091) 234-5678'), isNull);
+      expect(v('123'), isNotNull); // too short
+      expect(v('phone_number'), isNotNull);
+    });
+  });
+
+  group('NeatValidators.startsWith & endsWith & contains & notContains', () {
+    test('startsWith and endsWith validate prefixes and suffixes', () {
+      final startV = NeatValidators.startsWith('SV_');
+      expect(startV('SV_12345'), isNull);
+      expect(startV('GV_12345'), isNotNull);
+
+      final endV = NeatValidators.endsWith('@gmail.com', caseSensitive: false);
+      expect(endV('test@GMAIL.COM'), isNull);
+      expect(endV('test@yahoo.com'), isNotNull);
+    });
+
+    test('contains and notContains validate substring presence', () {
+      final hasV = NeatValidators.contains('flutter');
+      expect(hasV('i love flutter framework'), isNull);
+      expect(hasV('i love react'), isNotNull);
+
+      final notV = NeatValidators.notContains('badword');
+      expect(notV('hello world'), isNull);
+      expect(notV('this has badword inside'), isNotNull);
+    });
+  });
+
+  group('NeatValidators.latinOnly & noEmoji & noHtml', () {
+    test('latinOnly restricts to English alphabet and spaces', () {
+      final v = NeatValidators.latinOnly();
+      expect(v('NGUYEN VAN A'), isNull);
+      expect(v('John Doe'), isNull);
+      expect(v('Nguyễn Văn A'), isNotNull); // Vietnamese accented characters
+      expect(v('User123'), isNotNull);
+    });
+
+    test('noEmoji flags common emojis', () {
+      final v = NeatValidators.noEmoji();
+      expect(v('Standard text'), isNull);
+      expect(v('Text with 😀 smile'), isNotNull);
+      expect(v('🔥 fire'), isNotNull);
+    });
+
+    test('noHtml flags HTML tags', () {
+      final v = NeatValidators.noHtml();
+      expect(v('Normal description'), isNull);
+      expect(v('<script>alert("xss")</script>'), isNotNull);
+      expect(v('Hello <b>world</b>'), isNotNull);
+    });
+  });
+
+  group('NeatValidators.passwordStrength', () {
+    test('validates password criteria', () {
+      final v = NeatValidators.passwordStrength(
+        minUppercase: 1,
+        minLowercase: 1,
+        minDigits: 1,
+        minSpecialChars: 1,
+      );
+
+      expect(v('P@ssword1'), isNull);
+      expect(v('password1'), isNotNull); // missing uppercase & special
+      expect(v('PASSWORD!'), isNotNull); // missing lowercase & digits
+      expect(v('PassWord!'), isNotNull); // missing digit
+    });
+  });
+
+  group('NeatValidators.creditCard', () {
+    test('validates credit card numbers using Luhn check', () {
+      final v = NeatValidators.creditCard();
+      // Valid test Visa card
+      expect(v('4532 0151 1283 0366'), isNull);
+      // Valid test Mastercard
+      expect(v('5425-2334-3010-9903'), isNull);
+      // Invalid numbers
+      expect(v('4532015112830367'), isNotNull);
+      expect(v('12345'), isNotNull);
+    });
+  });
+
+  group('NeatValidators.positive & negative & multipleOf & decimalPrecision', () {
+    test('positive and negative check number sign', () {
+      final pos = NeatValidators.positive();
+      expect(pos(10), isNull);
+      expect(pos(0.1), isNull);
+      expect(pos(0), isNotNull);
+      expect(pos(-5), isNotNull);
+
+      final neg = NeatValidators.negative();
+      expect(neg(-1), isNull);
+      expect(neg(0), isNotNull);
+      expect(neg(5), isNotNull);
+    });
+
+    test('multipleOf checks step divisibility', () {
+      final v = NeatValidators.multipleOf(10000);
+      expect(v(50000), isNull);
+      expect(v(10000), isNull);
+      expect(v(25000), isNotNull);
+    });
+
+    test('decimalPrecision checks maximum decimals allowed', () {
+      final v = NeatValidators.decimalPrecision(2);
+      expect(v(100), isNull);
+      expect(v(100.5), isNull);
+      expect(v(100.25), isNull);
+      expect(v(100.125), isNotNull);
+      expect(v('19.99'), isNull);
+      expect(v('19.999'), isNotNull);
+    });
+  });
+
+  group('NeatValidators.pastDate & futureDate & dateRange', () {
+    test('pastDate and futureDate evaluate relative to now', () {
+      final pastV = NeatValidators.pastDate();
+      expect(pastV(DateTime.now().subtract(const Duration(days: 1))), isNull);
+      expect(pastV(DateTime.now().add(const Duration(days: 1))), isNotNull);
+
+      final futureV = NeatValidators.futureDate();
+      expect(futureV(DateTime.now().add(const Duration(days: 1))), isNull);
+      expect(futureV(DateTime.now().subtract(const Duration(days: 1))), isNotNull);
+    });
+
+    test('dateRange checks bounds', () {
+      final min = DateTime(2026, 1, 1);
+      final max = DateTime(2026, 12, 31);
+      final v = NeatValidators.dateRange(min, max);
+
+      expect(v(DateTime(2026, 6, 15)), isNull);
+      expect(v(DateTime(2025, 12, 31)), isNotNull);
+      expect(v(DateTime(2027, 1, 1)), isNotNull);
+    });
+  });
+
+  group('NeatValidators.mustBeTrue & mustBeFalse', () {
+    test('mustBeTrue and mustBeFalse validate booleans', () {
+      final trueV = NeatValidators.mustBeTrue();
+      expect(trueV(true), isNull);
+      expect(trueV(false), isNotNull);
+      expect(trueV(null), isNotNull);
+
+      final falseV = NeatValidators.mustBeFalse();
+      expect(falseV(false), isNull);
+      expect(falseV(true), isNotNull);
+      expect(falseV(null), isNotNull);
+    });
+  });
+
+  group('NeatValidators.minItems & maxItems & uniqueItems', () {
+    test('minItems and maxItems check collection size', () {
+      final minV = NeatValidators.minItems(2);
+      expect(minV(['a', 'b']), isNull);
+      expect(minV(['a']), isNotNull);
+
+      final maxV = NeatValidators.maxItems(3);
+      expect(maxV([1, 2, 3]), isNull);
+      expect(maxV([1, 2, 3, 4]), isNotNull);
+    });
+
+    test('uniqueItems checks for duplicates in list', () {
+      final v = NeatValidators.uniqueItems();
+      expect(v(['a@b.com', 'c@d.com']), isNull);
+      expect(v(['a@b.com', 'a@b.com']), isNotNull);
     });
   });
 
