@@ -1,11 +1,4 @@
-# 1.1.0-preview.3
-
-- **Direct Error Access on `NeatFieldState`:** Added `errorMessage` getter for clean binding directly to `InputDecoration.errorText`.
-- **Expanded Test Coverage:** Added comprehensive nested state management tests (`test/nested_and_state_management_test.dart`) covering complex field updates, Riverpod/custom notifier bindings, and race condition handling (increasing test suite to 83+ tests).
-- **Widget Test Compatibility:** Configured `InkRipple.splashFactory` in the showcase example app to avoid fragment shader decoding issues (`ink_sparkle.frag`) in headless and test environments.
-- **Documentation & Examples:** Updated README and showcase code examples to reflect the latest clean API patterns.
-
-# 1.1.0-preview.2
+# 1.1.0
 
 - **Ultra-Clean Riverpod Support:**
   - Added `NeatFormNotifierMixin<K>` to automatically bind state, eliminating all manual boilerplate overrides in `Notifier<NeatFormState<K>>`.
@@ -23,8 +16,8 @@
 - **Flutter Native Reactive Controller:** `NeatFormController` extends `ChangeNotifier` / `Listenable` for direct reactive usage with Flutter's `ListenableBuilder`.
 - **Async Race Condition Protection:** Sequence tokens ensure stale in-flight async requests never overwrite newer user inputs upon reset or rapid typing.
 - **Submission Lifecycle:** Added `NeatSubmissionStatus` (`idle`, `submitting`, `success`, `failure`).
-- **Interactive Multi-Platform Example App:** Full Flutter showcase supporting iOS, Android, macOS, and Web.
-- **Enhanced Test Suite:** 78 unit and widget tests covering all validators, state models, and form interactions.
+- **Interactive Multi-Platform Example App:** Full Flutter showcase supporting iOS, Android, macOS, and Web with `InkRipple.splashFactory` configured for widget test & headless compatibility.
+- **Comprehensive Test Suite:** 83+ unit and widget tests covering all validators, nested state models, notifier bindings, and form interactions.
 
 # 1.0.0
 
