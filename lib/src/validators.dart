@@ -121,6 +121,9 @@ class NeatValidators {
   /// Default Error Code for date range violation.
   static const String codeDateRange = 'date_range';
 
+  /// Default Error Code for formatted date string violation.
+  static const String codeDateString = 'date_string';
+
   /// Default Error Code for boolean true requirement violation.
   static const String codeMustBeTrue = 'must_be_true';
 
@@ -859,6 +862,116 @@ class NeatValidators {
           message: message,
         );
       }
+      return null;
+    };
+  }
+
+  /// Validates that a string is a valid calendar date formatted as [format] (e.g. `DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`).
+  ///
+  /// Checks calendar validity (valid month 1-12, days 1-31, leap years, days per month)
+  /// and optional bounds ([mustBePast], [mustBeFuture], [minYear], [maxYear]).
+  static NeatValidator<Object?> dateString({
+    String format = 'DD/MM/YYYY',
+    bool mustBePast = false,
+    bool mustBeFuture = false,
+    int? minYear,
+    int? maxYear,
+    String code = codeDateString,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value == null) return null;
+      final text = value.toString().trim();
+      if (text.isEmpty) return null;
+
+      final cleanFormat = format.toUpperCase().replaceAll('-', '/');
+      final cleanText = text.replaceAll('-', '/');
+
+      final parts = cleanText.split('/');
+      final formatParts = cleanFormat.split('/');
+
+      if (parts.length != formatParts.length ||
+          parts.any((p) => int.tryParse(p) == null)) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Định dạng ngày không hợp lệ ($format)',
+        );
+      }
+
+      var day = 0;
+      var month = 0;
+      var year = 0;
+      for (var i = 0; i < formatParts.length; i++) {
+        final f = formatParts[i];
+        final p = parts[i];
+        if (p.length != f.length) {
+          return NeatValidationError(
+            code,
+            message: message ?? 'Định dạng ngày không hợp lệ ($format)',
+          );
+        }
+        final val = int.parse(p);
+        if (f == 'DD') {
+          day = val;
+        } else if (f == 'MM') {
+          month = val;
+        } else if (f == 'YYYY') {
+          year = val;
+        } else if (f == 'YY') {
+          year = 2000 + val;
+        }
+      }
+
+      if (month < 1 || month > 12) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Tháng không hợp lệ (01-12)',
+        );
+      }
+
+      const daysInMonth = [
+        0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+      ];
+      final isLeapYear =
+          (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+      final maxDays = (month == 2 && isLeapYear) ? 29 : daysInMonth[month];
+
+      if (day < 1 || day > maxDays) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Ngày không hợp lệ trong tháng (01-$maxDays)',
+        );
+      }
+
+      if (minYear != null && year < minYear) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Năm phải từ $minYear trở lên',
+        );
+      }
+      if (maxYear != null && year > maxYear) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Năm tối đa là $maxYear',
+        );
+      }
+
+      final parsedDate = DateTime(year, month, day);
+      final now = DateTime.now();
+
+      if (mustBePast && !parsedDate.isBefore(now)) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Ngày phải ở trong quá khứ',
+        );
+      }
+      if (mustBeFuture && !parsedDate.isAfter(now)) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Ngày phải ở trong tương lai',
+        );
+      }
+
       return null;
     };
   }

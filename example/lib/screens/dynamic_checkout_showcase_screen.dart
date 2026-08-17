@@ -51,7 +51,12 @@ class _DynamicCheckoutShowcaseScreenState
         ]),
         GuestField.dateOfBirth: NeatValidators.combine([
           NeatValidators.required(message: 'Vui lòng nhập ngày sinh'),
-          NeatValidators.exactLength(10, message: 'Định dạng DD/MM/YYYY'),
+          NeatValidators.dateString(
+            format: 'DD/MM/YYYY',
+            mustBePast: true,
+            minYear: 1900,
+            message: 'Ngày sinh không hợp lệ (DD/MM/YYYY)',
+          ),
         ]),
       },
       arrayValidators: [
@@ -446,8 +451,21 @@ class _DynamicCheckoutShowcaseScreenState
                     inputFormatters: [
                       NeatInputFormatters.date(format: NeatDateFormat.ddMMyyyy),
                     ],
-                    onChanged: (v) =>
-                        _guestsController.setArrayField(index, GuestField.dateOfBirth, v),
+                    onChanged: (v) {
+                      if (v.length >= 10) {
+                        _guestsController.setAndValidateArrayField(
+                          index,
+                          GuestField.dateOfBirth,
+                          v,
+                        );
+                      } else {
+                        _guestsController.setArrayField(
+                          index,
+                          GuestField.dateOfBirth,
+                          v,
+                        );
+                      }
+                    },
                   ),
                 ),
               ],

@@ -468,4 +468,54 @@ void main() {
       expect(e.toString(), contains('My error'));
     });
   });
+
+  group('NeatValidators.dateString tests', () {
+    test('validates standard DD/MM/YYYY calendar dates', () {
+      final v = NeatValidators.dateString(format: 'DD/MM/YYYY');
+      expect(v('15/08/1995'), isNull);
+      expect(v('31/12/2020'), isNull);
+      expect(v('29/02/2024'), isNull); // Leap year 2024
+      expect(v(null), isNull);
+      expect(v(''), isNull);
+
+      // Invalid dates
+      expect(v('45/64/5645')?.code, NeatValidators.codeDateString);
+      expect(v('32/01/2020')?.code, NeatValidators.codeDateString);
+      expect(v('15/13/2020')?.code, NeatValidators.codeDateString);
+      expect(v('29/02/2023')?.code, NeatValidators.codeDateString); // Not leap year
+      expect(v('invalid-string')?.code, NeatValidators.codeDateString);
+      expect(v('15/08/95')?.code, NeatValidators.codeDateString); // Format mismatch
+    });
+
+    test('validates alternative formats: YYYY-MM-DD and MM/DD/YYYY', () {
+      final vYmd = NeatValidators.dateString(format: 'YYYY-MM-DD');
+      expect(vYmd('1995-08-15'), isNull);
+      expect(vYmd('2020-02-29'), isNull);
+      expect(vYmd('2020-13-15')?.code, NeatValidators.codeDateString);
+
+      final vMdy = NeatValidators.dateString(format: 'MM/DD/YYYY');
+      expect(vMdy('08/15/1995'), isNull);
+      expect(vMdy('13/15/1995')?.code, NeatValidators.codeDateString);
+    });
+
+    test('validates mustBePast, mustBeFuture, minYear, maxYear', () {
+      final vPast = NeatValidators.dateString(
+        format: 'DD/MM/YYYY',
+        mustBePast: true,
+        minYear: 1900,
+        maxYear: 2025,
+      );
+      expect(vPast('01/01/2000'), isNull);
+      expect(vPast('01/01/2099')?.code, NeatValidators.codeDateString);
+      expect(vPast('01/01/1850')?.code, NeatValidators.codeDateString);
+      expect(vPast('01/01/2030')?.code, NeatValidators.codeDateString);
+
+      final vFuture = NeatValidators.dateString(
+        format: 'DD/MM/YYYY',
+        mustBeFuture: true,
+      );
+      expect(vFuture('01/01/2099'), isNull);
+      expect(vFuture('01/01/1990')?.code, NeatValidators.codeDateString);
+    });
+  });
 }
