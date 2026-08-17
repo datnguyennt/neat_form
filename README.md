@@ -2,9 +2,9 @@
 
 Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạnh mẽ, type-safe (100% `Object?`) dành cho **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.3-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 156 Passed](https://img.shields.io/badge/tests-156%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 162 Passed](https://img.shields.io/badge/tests-162%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](#tiếng-việt) | [English](README_EN.md)**
@@ -782,7 +782,10 @@ await form.validateFieldAsync<String>(
 
 ### 📱 Ứng dụng mẫu (Flutter Showcase App)
 
-Ứng dụng mẫu đa nền tảng (iOS, Android, Web, macOS) nằm trong thư mục `example/`.
+Ứng dụng mẫu đa nền tảng (iOS, Android, Web, macOS) nằm trong thư mục `example/`. Bao gồm 4 Tab nghiệp vụ và màn hình **Full Demo Screen (`DynamicCheckoutShowcaseScreen`)** kết hợp:
+- **Dynamic Flight Passenger Booking**: Danh sách thêm/bớt hành khách động, chặn trùng lặp số hộ chiếu (`NeatArrayValidators.uniqueBy`).
+- **Fintech & Card Formatting**: Auto format thẻ ngân hàng 4-4-4-4, hạn thẻ `MM/YY`, CVV, mã giảm giá.
+- **Live State Output**: Hiển thị luồng JSON và trạng thái form thời gian thực.
 
 Chạy ứng dụng mẫu:
 ```bash

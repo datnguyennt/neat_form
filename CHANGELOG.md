@@ -1,13 +1,15 @@
-# 1.3.0
+# 1.2.3
 
 - **Dynamic Form Array Suite (`NeatFormArray`):**
   - Added zero-dependency `NeatFormArrayItem<K>` with auto-generated collision-free stable `id` for reliable Flutter widget `ValueKey(item.id)` bindings without focus hopping.
   - Added immutable `NeatFormArrayState<K>` with type-safe operators, copyWith, `isValid`, `isDirty`, `values` extraction, and deep equality.
   - Added `NeatArrayValidators` suite: `minItems`, `maxItems`, `lengthRange`, `uniqueBy` (for duplicate passport/field detection), and `custom`.
   - Added `NeatFormArrayController<K>` with full CRUD (`addItem`, `insertItem`, `removeItemAt`, `removeItemById`, `moveItem`, `setArrayField`, `setAndValidateArrayField`, `validateArray`, `submitForm`, `resetArray`, `clearErrors`).
-  - Added state management mixins: `NeatFormArrayNotifierMixin` (Riverpod) and `NeatFormArrayCubitMixin` (BLoC/Cubit).
-  - Added interactive Tab 4 "Dynamic Flight Passenger Booking" to the example application.
-  - Expanded test suite to **152 tests** with **98.7% code coverage**.
+  - Added state management mixins: `NeatFormArrayNotifierMixin` / `NeatNestedFormArrayNotifierMixin` (Riverpod) and `NeatFormArrayCubitMixin` / `NeatNestedFormArrayCubitMixin` (BLoC/Cubit).
+  - Added `factory NeatFormController.fromValues` constructor and `controller.state` / `controller.isValid` getters.
+  - Added interactive full demo screen `DynamicCheckoutShowcaseScreen` combining Dynamic Form Array, Masking Formatters, and live JSON telemetry.
+  - Redesigned all vector SVG architecture diagrams with solid white card backgrounds for flawless contrast on both Dark Mode and Light Mode on pub.dev and GitHub.
+  - Expanded test suite to **162 tests** with **98.93% code coverage**.
 
 # 1.2.2
 

@@ -1253,6 +1253,24 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
         _validators = Map<K, NeatValidator<Object?>>.from(validators),
         _observer = observer;
 
+  /// Creates a form controller from a simple map of initial values.
+  factory NeatFormController.fromValues({
+    required Map<K, Object?> initialValues,
+    Map<K, bool> optionalKeys = const {},
+    Map<K, NeatValidator<Object?>> validators = const {},
+    NeatFormObserver<K>? observer,
+  }) {
+    final formState = NeatFormState<K>.fromValues(
+      initialValues,
+      optionalKeys: optionalKeys,
+    );
+    return NeatFormController<K>(
+      initialFields: formState.fields,
+      validators: validators,
+      observer: observer,
+    );
+  }
+
   Map<K, NeatFieldState<Object?>> _fields;
   final Map<K, NeatValidator<Object?>> _validators;
   final NeatFormObserver<K>? _observer;
@@ -1269,6 +1287,15 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
 
   /// Whether this controller has been disposed.
   bool get isDisposed => _isDisposed;
+
+  /// Returns a snapshot [NeatFormState<K>] of the current controller fields.
+  NeatFormState<K> get state => NeatFormState<K>(
+        fields: _fields,
+        status: submissionStatus,
+      );
+
+  /// True if all fields in the form are valid.
+  bool get isValid => _fields.values.every((f) => f.isValid);
 
   @override
   void updateStateWithFields(Map<K, NeatFieldState<Object?>> newFields) {

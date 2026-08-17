@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:neat_form/neat_form.dart';
+import 'screens/dynamic_checkout_showcase_screen.dart';
 
 void main() {
   runApp(const NeatFormShowcaseApp());
@@ -61,6 +62,25 @@ class FormShowcaseHomePage extends StatelessWidget {
               ),
             ],
           ),
+          actions: [
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.rocket_launch_rounded, size: 16),
+              label: const Text('Full Demo', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const DynamicCheckoutShowcaseScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
           flexibleSpace: Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(

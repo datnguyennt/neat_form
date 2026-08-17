@@ -67,5 +67,41 @@ void main() {
       expect(find.text('Vui lòng nhập email'), findsOneWidget);
       expect(find.text('Vui lòng nhập tên đăng nhập'), findsOneWidget);
     });
+
+    testWidgets('DynamicCheckoutShowcaseScreen renders and navigates from AppBar',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(const NeatFormShowcaseApp());
+      await tester.pumpAndSettle();
+
+      // Tap Full Demo action button
+      final fullDemoBtn = find.text('Full Demo');
+      expect(fullDemoBtn, findsOneWidget);
+      await tester.tap(fullDemoBtn);
+      await tester.pumpAndSettle();
+
+      // Verify DynamicCheckoutShowcaseScreen is presented
+      expect(find.text('✈️ Đặt Vé & Thanh Toán Toàn Diện'), findsOneWidget);
+      expect(find.text('1. Danh Sách Hành Khách Bay (1/5)'), findsOneWidget);
+      expect(find.text('2. Thông Tin Thanh Toán & Thẻ (Input Formatters & Masking)'), findsOneWidget);
+      expect(find.text('3. Dữ Liệu Form Thời Gian Thực (Live JSON Output)'), findsOneWidget);
+
+      // Add a guest
+      final addGuestBtn = find.text('+ Thêm Hành Khách Mới');
+      expect(addGuestBtn, findsOneWidget);
+      await tester.tap(addGuestBtn);
+      await tester.pumpAndSettle();
+      expect(find.text('1. Danh Sách Hành Khách Bay (2/5)'), findsOneWidget);
+
+      // Tap Submit without card info -> shows error snackbar
+      final submitBtn = find.text('Xác Nhận & Xuất Vé');
+      await tester.tap(submitBtn);
+      await tester.pumpAndSettle();
+      expect(find.text('Vui lòng nhập số thẻ ngân hàng'), findsOneWidget);
+    });
   });
 }

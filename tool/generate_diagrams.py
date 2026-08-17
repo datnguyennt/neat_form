@@ -231,9 +231,42 @@ for name, code in diagrams.items():
     data = {
         "code": code.strip(),
         "mermaid": {
-            "theme": "default",
+            "theme": "base",
             "themeVariables": {
-                "fontFamily": "Inter, Roboto, sans-serif",
+                "background": "#ffffff",
+                "primaryColor": "#eef2ff",
+                "primaryTextColor": "#1e1b4b",
+                "primaryBorderColor": "#6366f1",
+                "lineColor": "#4f46e5",
+                "secondaryColor": "#f0fdf4",
+                "secondaryTextColor": "#14532d",
+                "secondaryBorderColor": "#22c55e",
+                "tertiaryColor": "#fef3c7",
+                "tertiaryTextColor": "#78350f",
+                "tertiaryBorderColor": "#f59e0b",
+                "mainBkg": "#eef2ff",
+                "nodeBorder": "#6366f1",
+                "clusterBkg": "#f8fafc",
+                "clusterBorder": "#94a3b8",
+                "defaultLinkColor": "#4f46e5",
+                "titleColor": "#0f172a",
+                "edgeLabelBackground": "#ffffff",
+                "actorBkg": "#eef2ff",
+                "actorBorder": "#6366f1",
+                "actorTextColor": "#1e1b4b",
+                "actorLineColor": "#6366f1",
+                "signalColor": "#4f46e5",
+                "signalTextColor": "#1e293b",
+                "labelBoxBkgColor": "#ffffff",
+                "labelBoxBorderColor": "#6366f1",
+                "labelTextColor": "#1e1b4b",
+                "loopTextColor": "#1e1b4b",
+                "noteBkgColor": "#fef3c7",
+                "noteBorderColor": "#f59e0b",
+                "noteTextColor": "#78350f",
+                "activationBorderColor": "#6366f1",
+                "activationBkgColor": "#e0e7ff",
+                "fontFamily": "Inter, system-ui, -apple-system, Roboto, sans-serif",
                 "fontSize": "14px"
             }
         }
@@ -243,6 +276,14 @@ for name, code in diagrams.items():
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req) as resp:
         svg_content = resp.read().decode("utf-8")
+        
+        # Inject solid white background rect with rounded border for flawless Dark Mode contrast on pub.dev / GitHub
+        if "<svg" in svg_content:
+            svg_tag_end = svg_content.find(">", svg_content.find("<svg"))
+            if svg_tag_end != -1:
+                bg_rect = '<rect width="100%" height="100%" fill="#ffffff" rx="16" stroke="#cbd5e1" stroke-width="1.5"/>'
+                svg_content = svg_content[:svg_tag_end+1] + bg_rect + svg_content[svg_tag_end+1:]
+        
         filepath = f"doc/diagrams/{name}.svg"
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(svg_content)

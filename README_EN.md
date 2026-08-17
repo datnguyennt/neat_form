@@ -2,9 +2,9 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.3-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 156 Passed](https://img.shields.io/badge/tests-156%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 162 Passed](https://img.shields.io/badge/tests-162%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
@@ -781,7 +781,10 @@ await form.validateFieldAsync<String>(
 
 ### 📱 Flutter Showcase App
 
-A complete multi-platform demo application is available inside the `example/` directory.
+A complete multi-platform demo application is available inside the `example/` directory. Features 4 interactive tabs plus a dedicated **Full Demo Screen (`DynamicCheckoutShowcaseScreen`)** showcasing:
+- **Dynamic Flight Passenger Booking**: Dynamic add/remove passengers with duplicate passport detection (`NeatArrayValidators.uniqueBy`).
+- **Fintech & Card Formatting**: Auto 4-4-4-4 card spacing, `MM/YY` expiration mask, CVV mask, currency formatting, and uppercase promo codes.
+- **Live State Telemetry**: Real-time reactive JSON viewer and form validity badges.
 
 Run the example app:
 ```bash
