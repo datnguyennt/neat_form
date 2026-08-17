@@ -515,6 +515,7 @@ class _DynamicCheckoutShowcaseScreenState
 
             // Card Number Formatter
             TextFormField(
+              initialValue: form.valueOf<String>(PaymentField.cardNumber),
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'Số Thẻ Quốc Tế (Visa / Mastercard / JCB)*',
@@ -538,6 +539,7 @@ class _DynamicCheckoutShowcaseScreenState
                 Expanded(
                   flex: 3,
                   child: TextFormField(
+                    initialValue: form.valueOf<String>(PaymentField.expiryDate),
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Hạn Thẻ (MM/YY)*',
@@ -556,6 +558,7 @@ class _DynamicCheckoutShowcaseScreenState
                 Expanded(
                   flex: 2,
                   child: TextFormField(
+                    initialValue: form.valueOf<String>(PaymentField.cvv),
                     keyboardType: TextInputType.number,
                     obscureText: true,
                     decoration: InputDecoration(
@@ -575,6 +578,7 @@ class _DynamicCheckoutShowcaseScreenState
                 Expanded(
                   flex: 3,
                   child: TextFormField(
+                    initialValue: form.valueOf<String>(PaymentField.promoCode),
                     decoration: const InputDecoration(
                       labelText: 'Mã Giảm Giá',
                       prefixIcon: Icon(Icons.discount_outlined),
