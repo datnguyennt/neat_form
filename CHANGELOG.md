@@ -1,3 +1,11 @@
+# 1.2.6
+
+- **Open Source Contribution Guidelines & Templates:**
+  - Added `CONTRIBUTING.md` guide with detailed instructions for bug reporting, feature requests, and Pull Request workflows.
+  - Added GitHub Issue templates for Bug Reports and Feature Requests.
+  - Added GitHub Pull Request template with testing checklists and contribution criteria.
+  - Fixed example app payment form fields data loss on rebuilds by adding `initialValue` properties.
+
 # 1.2.5
 
 - **Comprehensive Validator Suite Expansion & Edge Case Hardening:**
