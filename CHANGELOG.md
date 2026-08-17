@@ -1,3 +1,9 @@
+# 1.3.1
+
+- **CI/CD & Automated Publishing:**
+  - Configured automated publishing via OIDC and GitHub Actions (`publish.yml`).
+  - Added continuous integration workflow for testing and static analysis (`ci.yml`).
+
 # 1.3.0
 
 - **Official Flutter DevTools Extension (`NeatForm` Tab):**
