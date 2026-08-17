@@ -8,6 +8,15 @@ enum TestField { email, password, age }
 
 enum ItemField { name, price }
 
+Widget testApp(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(
+      splashFactory: NoSplash.splashFactory,
+    ),
+    home: Scaffold(body: child),
+  );
+}
+
 void main() {
   group('NeatFormScope & NeatFormArrayScope', () {
     testWidgets('NeatFormScope.of and maybeOf return controller when present',
@@ -20,8 +29,8 @@ void main() {
       late NeatFormController<TestField>? foundMaybe;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: NeatFormScope<TestField>(
+        testApp(
+          NeatFormScope<TestField>(
             controller: controller,
             child: Builder(
               builder: (context) {
@@ -43,8 +52,8 @@ void main() {
       NeatFormController<TestField>? foundMaybe;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        testApp(
+          Builder(
             builder: (context) {
               foundMaybe = NeatFormScope.maybeOf<TestField>(context);
               return const SizedBox.shrink();
@@ -59,8 +68,8 @@ void main() {
     testWidgets('NeatFormScope.of throws FlutterError when scope is missing',
         (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        testApp(
+          Builder(
             builder: (context) {
               expect(
                 () => NeatFormScope.of<TestField>(context),
@@ -84,8 +93,8 @@ void main() {
       late NeatFormArrayController<ItemField>? foundMaybe;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: NeatFormArrayScope<ItemField>(
+        testApp(
+          NeatFormArrayScope<ItemField>(
             controller: arrayController,
             child: Builder(
               builder: (context) {
@@ -105,11 +114,13 @@ void main() {
     testWidgets(
         'NeatFormArrayScope.of throws FlutterError when missing, maybeOf returns null',
         (tester) async {
+      NeatFormArrayController<ItemField>? foundMaybe;
+
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        testApp(
+          Builder(
             builder: (context) {
-              expect(NeatFormArrayScope.maybeOf<ItemField>(context), isNull);
+              foundMaybe = NeatFormArrayScope.maybeOf<ItemField>(context);
               expect(
                 () => NeatFormArrayScope.of<ItemField>(context),
                 throwsA(isA<FlutterError>()),
@@ -119,6 +130,8 @@ void main() {
           ),
         ),
       );
+
+      expect(foundMaybe, isNull);
     });
   });
 
@@ -130,15 +143,13 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFieldBuilder<TestField, String>(
-              controller: controller,
-              field: TestField.email,
-              builder: (context, state, ctrl) {
-                return Text('Email: ${state.value}');
-              },
-            ),
+        testApp(
+          NeatFieldBuilder<TestField, String>(
+            controller: controller,
+            field: TestField.email,
+            builder: (context, state, _) {
+              return Text('Email: ${state.value}');
+            },
           ),
         ),
       );
@@ -146,66 +157,63 @@ void main() {
       expect(find.text('Email: initial@mail.com'), findsOneWidget);
     });
 
-    testWidgets('resolves controller from NeatFormScope when controller is null',
+    testWidgets(
+        'resolves controller from NeatFormScope when controller is null',
         (tester) async {
       final controller = NeatFormController<TestField>.fromValues(
-        initialValues: {TestField.email: 'scoped@mail.com'},
+        initialValues: {TestField.email: 'scope@mail.com'},
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormScope<TestField>(
-              controller: controller,
-              child: NeatFieldBuilder<TestField, String>(
-                field: TestField.email,
-                builder: (context, state, ctrl) {
-                  return Text('Scoped: ${state.value}');
-                },
-              ),
+        testApp(
+          NeatFormScope<TestField>(
+            controller: controller,
+            child: NeatFieldBuilder<TestField, String>(
+              field: TestField.email,
+              builder: (context, state, _) {
+                return Text('Email: ${state.value}');
+              },
             ),
           ),
         ),
       );
 
-      expect(find.text('Scoped: scoped@mail.com'), findsOneWidget);
+      expect(find.text('Email: scope@mail.com'), findsOneWidget);
     });
 
     testWidgets('rebuilds ONLY target field when its value changes',
         (tester) async {
       final controller = NeatFormController<TestField>.fromValues(
         initialValues: {
-          TestField.email: 'a@mail.com',
+          TestField.email: 'mail@test.com',
           TestField.password: 'secret',
         },
       );
 
-      var emailBuildCount = 0;
-      var passwordBuildCount = 0;
+      int emailBuildCount = 0;
+      int passwordBuildCount = 0;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormScope<TestField>(
-              controller: controller,
-              child: Column(
-                children: [
-                  NeatFieldBuilder<TestField, String>(
-                    field: TestField.email,
-                    builder: (context, state, ctrl) {
-                      emailBuildCount++;
-                      return Text('Email: ${state.value}');
-                    },
-                  ),
-                  NeatFieldBuilder<TestField, String>(
-                    field: TestField.password,
-                    builder: (context, state, ctrl) {
-                      passwordBuildCount++;
-                      return Text('Password: ${state.value}');
-                    },
-                  ),
-                ],
-              ),
+        testApp(
+          NeatFormScope<TestField>(
+            controller: controller,
+            child: Column(
+              children: [
+                NeatFieldBuilder<TestField, String>(
+                  field: TestField.email,
+                  builder: (context, state, _) {
+                    emailBuildCount++;
+                    return Text('Email: ${state.value}');
+                  },
+                ),
+                NeatFieldBuilder<TestField, String>(
+                  field: TestField.password,
+                  builder: (context, state, _) {
+                    passwordBuildCount++;
+                    return Text('Password: ${state.value}');
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -215,21 +223,23 @@ void main() {
       expect(passwordBuildCount, equals(1));
 
       // Mutate ONLY email
-      controller.setField(TestField.email, 'b@mail.com');
+      controller.setField(TestField.email, 'updated@test.com');
       await tester.pump();
 
-      expect(find.text('Email: b@mail.com'), findsOneWidget);
+      // Only email builder rebuilt!
       expect(emailBuildCount, equals(2));
-      // Password field must NOT have rebuilt!
-      expect(passwordBuildCount, equals(1));
+      expect(passwordBuildCount, equals(1)); // Password untouched!
+      expect(find.text('Email: updated@test.com'), findsOneWidget);
+      expect(find.text('Password: secret'), findsOneWidget);
 
-      // Mutate password
+      // Mutate ONLY password
       controller.setField(TestField.password, 'new_secret');
       await tester.pump();
 
-      expect(find.text('Password: new_secret'), findsOneWidget);
+      // Only password builder rebuilt!
       expect(emailBuildCount, equals(2));
       expect(passwordBuildCount, equals(2));
+      expect(find.text('Password: new_secret'), findsOneWidget);
     });
 
     testWidgets('respects buildWhen predicate', (tester) async {
@@ -240,31 +250,31 @@ void main() {
         },
       );
 
-      var buildCount = 0;
+      int buildCount = 0;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFieldBuilder<TestField, String>(
-              controller: controller,
-              field: TestField.email,
-              buildWhen: (prev, curr) => prev.error != curr.error,
-              builder: (context, state, ctrl) {
-                buildCount++;
-                return Text('Error: ${state.errorMessage ?? "none"}');
-              },
-            ),
+        testApp(
+          NeatFieldBuilder<TestField, String>(
+            controller: controller,
+            field: TestField.email,
+            buildWhen: (prev, curr) => prev.error != curr.error,
+            builder: (context, state, _) {
+              buildCount++;
+              return Text(state.errorMessage != null
+                  ? 'Error: ${state.errorMessage}'
+                  : 'Valid: ${state.value}');
+            },
           ),
         ),
       );
 
       expect(buildCount, equals(1));
-      expect(find.text('Error: none'), findsOneWidget);
+      expect(find.text('Valid: test@mail.com'), findsOneWidget);
 
-      // Change to another valid email -> error is still null, buildWhen returns false
+      // Change to another valid email -> error remains null -> buildWhen returns false
       controller.setField(TestField.email, 'another@mail.com');
       await tester.pump();
-      expect(buildCount, equals(1)); // Did NOT rebuild!
+      expect(buildCount, equals(1)); // No rebuild!
 
       // Change to invalid email -> error changes, buildWhen returns true
       controller.setAndValidateField(TestField.email, 'invalid_mail');
@@ -273,7 +283,8 @@ void main() {
       expect(find.text('Error: Email không hợp lệ'), findsOneWidget);
     });
 
-    testWidgets('updates cleanly when didUpdateWidget changes controller or field',
+    testWidgets(
+        'updates cleanly when didUpdateWidget changes controller or field',
         (tester) async {
       final ctrl1 = NeatFormController<TestField>.fromValues(
         initialValues: {TestField.email: 'c1@mail.com', TestField.password: 'p1'},
@@ -288,21 +299,25 @@ void main() {
       await tester.pumpWidget(
         StatefulBuilder(
           builder: (context, setState) {
-            return MaterialApp(
-              home: Scaffold(
-                body: NeatFieldBuilder<TestField, String>(
-                  controller: activeCtrl,
-                  field: activeField,
-                  builder: (context, state, _) => Text('Val: ${state.value}'),
-                ),
-                floatingActionButton: FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      activeCtrl = ctrl2;
-                      activeField = TestField.password;
-                    });
-                  },
-                ),
+            return testApp(
+              Stack(
+                children: [
+                  NeatFieldBuilder<TestField, String>(
+                    controller: activeCtrl,
+                    field: activeField,
+                    builder: (context, state, _) => Text('Val: ${state.value}'),
+                  ),
+                  GestureDetector(
+                    key: const Key('switch_button'),
+                    onTap: () {
+                      setState(() {
+                        activeCtrl = ctrl2;
+                        activeField = TestField.password;
+                      });
+                    },
+                    child: const Text('Switch Action'),
+                  ),
+                ],
               ),
             );
           },
@@ -312,16 +327,30 @@ void main() {
       expect(find.text('Val: c1@mail.com'), findsOneWidget);
 
       // Tap to switch controller & field key
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byKey(const Key('switch_button')));
       await tester.pump();
 
       expect(find.text('Val: p2'), findsOneWidget);
+
+      // Mutating ctrl1 should NOT trigger rebuild anymore (unsubscribed)
+      ctrl1.setField(TestField.email, 'mutated_c1@mail.com');
+      await tester.pump();
+      expect(find.text('Val: p2'), findsOneWidget);
+
+      // Mutating ctrl2 SHOULD trigger rebuild (subscribed)
+      ctrl2.setField(TestField.password, 'new_password');
+      await tester.pump();
+      expect(find.text('Val: new_password'), findsOneWidget);
     });
 
-    testWidgets('updates cleanly when didUpdateWidget changes ONLY field on same controller',
+    testWidgets(
+        'updates cleanly when didUpdateWidget changes ONLY field on same controller',
         (tester) async {
       final ctrl = NeatFormController<TestField>.fromValues(
-        initialValues: {TestField.email: 'email@test.com', TestField.password: 'pass123'},
+        initialValues: {
+          TestField.email: 'email@test.com',
+          TestField.password: 'pass123',
+        },
       );
 
       var activeField = TestField.email;
@@ -329,20 +358,25 @@ void main() {
       await tester.pumpWidget(
         StatefulBuilder(
           builder: (context, setState) {
-            return MaterialApp(
-              home: Scaffold(
-                body: NeatFieldBuilder<TestField, String>(
-                  controller: ctrl,
-                  field: activeField,
-                  builder: (context, state, _) => Text('CurrentField: ${state.value}'),
-                ),
-                floatingActionButton: FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      activeField = TestField.password;
-                    });
-                  },
-                ),
+            return testApp(
+              Stack(
+                children: [
+                  NeatFieldBuilder<TestField, String>(
+                    controller: ctrl,
+                    field: activeField,
+                    builder: (context, state, _) =>
+                        Text('CurrentField: ${state.value}'),
+                  ),
+                  GestureDetector(
+                    key: const Key('switch_field_button'),
+                    onTap: () {
+                      setState(() {
+                        activeField = TestField.password;
+                      });
+                    },
+                    child: const Text('Switch Field'),
+                  ),
+                ],
               ),
             );
           },
@@ -352,7 +386,7 @@ void main() {
       expect(find.text('CurrentField: email@test.com'), findsOneWidget);
 
       // Switch field key on the same controller
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byKey(const Key('switch_field_button')));
       await tester.pump();
 
       expect(find.text('CurrentField: pass123'), findsOneWidget);
@@ -361,12 +395,10 @@ void main() {
     testWidgets('throws FlutterError when controller cannot be resolved',
         (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFieldBuilder<TestField, String>(
-              field: TestField.email,
-              builder: (context, state, _) => const Text('Hi'),
-            ),
+        testApp(
+          NeatFieldBuilder<TestField, String>(
+            field: TestField.email,
+            builder: (context, state, _) => const Text('Hi'),
           ),
         ),
       );
@@ -385,14 +417,13 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormBuilder<TestField>(
-              controller: controller,
-              builder: (context, state, ctrl) {
-                return Text('Valid: ${state.isValid}, Submitting: ${state.submissionStatus.isSubmitting}');
-              },
-            ),
+        testApp(
+          NeatFormBuilder<TestField>(
+            controller: controller,
+            builder: (context, state, ctrl) {
+              return Text(
+                  'Valid: ${state.isValid}, Submitting: ${state.submissionStatus.isSubmitting}');
+            },
           ),
         ),
       );
@@ -408,43 +439,40 @@ void main() {
     testWidgets('respects buildWhen condition on NeatFormBuilder',
         (tester) async {
       final controller = NeatFormController<TestField>.fromValues(
-        initialValues: {TestField.email: 'initial'},
+        initialValues: {TestField.email: 'test@mail.com', TestField.password: '123'},
       );
 
-      var buildCount = 0;
+      int buildCount = 0;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormBuilder<TestField>(
-              controller: controller,
-              buildWhen: (prev, curr) =>
-                  prev.submissionStatus != curr.submissionStatus,
-              builder: (context, state, ctrl) {
-                buildCount++;
-                return Text('Status: ${state.submissionStatus}');
-              },
-            ),
+        testApp(
+          NeatFormBuilder<TestField>(
+            controller: controller,
+            buildWhen: (prev, curr) =>
+                prev.submissionStatus != curr.submissionStatus,
+            builder: (context, state, ctrl) {
+              buildCount++;
+              return Text('Status: ${state.submissionStatus.name}');
+            },
           ),
         ),
       );
 
       expect(buildCount, equals(1));
 
-      // Mutate field -> submissionStatus is still pristine, buildWhen returns false
-      controller.setField(TestField.email, 'changed');
+      // Mutate field value -> buildWhen returns false
+      controller.setField(TestField.email, 'another@mail.com');
       await tester.pump();
-      expect(buildCount, equals(1));
+      expect(buildCount, equals(1)); // No rebuild!
     });
 
-    testWidgets('throws FlutterError when NeatFormBuilder has no controller or scope',
+    testWidgets(
+        'throws FlutterError when NeatFormBuilder has no controller or scope',
         (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormBuilder<TestField>(
-              builder: (context, state, _) => const Text('Hi'),
-            ),
+        testApp(
+          NeatFormBuilder<TestField>(
+            builder: (context, state, ctrl) => const Text('Hi'),
           ),
         ),
       );
@@ -463,53 +491,50 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormArrayScope<ItemField>(
-              controller: arrayController,
-              child: NeatFormArrayBuilder<ItemField>(
-                builder: (context, arrayState, ctrl) {
-                  return Column(
-                    children: [
-                      Text('Count: ${arrayState.length}'),
-                      ...arrayState.items.map(
-                        (it) => Text('Item: ${it.form.valueOf<String>(ItemField.name)}'),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+        testApp(
+          NeatFormArrayBuilder<ItemField>(
+            controller: arrayController,
+            builder: (context, arrayState, ctrl) {
+              return Column(
+                children: [
+                  Text('Count: ${arrayState.length}'),
+                  ...arrayState.items.map(
+                    (item) => Text(
+                        'Item: ${item.form.valueOf(ItemField.name)} (${item.id})'),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       );
 
       expect(find.text('Count: 1'), findsOneWidget);
-      expect(find.text('Item: Item 1'), findsOneWidget);
+      expect(find.textContaining('Item: Item 1'), findsOneWidget);
 
       // Add item
       arrayController.addItem({ItemField.name: 'Item 2', ItemField.price: 20});
       await tester.pump();
 
       expect(find.text('Count: 2'), findsOneWidget);
-      expect(find.text('Item: Item 2'), findsOneWidget);
+      expect(find.textContaining('Item: Item 2'), findsOneWidget);
 
       // Remove item
       arrayController.removeItemAt(0);
       await tester.pump();
 
       expect(find.text('Count: 1'), findsOneWidget);
-      expect(find.text('Item: Item 2'), findsOneWidget);
+      expect(find.textContaining('Item: Item 1'), findsNothing);
+      expect(find.textContaining('Item: Item 2'), findsOneWidget);
     });
 
-    testWidgets('throws FlutterError when NeatFormArrayBuilder has no controller or scope',
+    testWidgets(
+        'throws FlutterError when NeatFormArrayBuilder has no controller or scope',
         (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormArrayBuilder<ItemField>(
-              builder: (context, state, _) => const Text('Hi'),
-            ),
+        testApp(
+          NeatFormArrayBuilder<ItemField>(
+            builder: (context, state, ctrl) => const Text('Hi'),
           ),
         ),
       );
@@ -519,28 +544,26 @@ void main() {
   });
 
   group('NeatSubmitButton', () {
-    testWidgets('triggers onPressed and shows loading indicator when submitting',
+    testWidgets(
+        'triggers onPressed and shows loading indicator when submitting',
         (tester) async {
+      final completer = Completer<void>();
       final controller = NeatFormController<TestField>.fromValues(
         initialValues: {TestField.email: 'user@test.com'},
       );
 
-      final completer = Completer<void>();
-
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatFormScope<TestField>(
-              controller: controller,
-              child: NeatSubmitButton<TestField>(
-                onPressed: (ctrl) async {
-                  await ctrl.submitForm(
-                    onSubmit: (_) async => completer.future,
-                  );
+        testApp(
+          NeatSubmitButton<TestField>(
+            controller: controller,
+            onPressed: (ctrl) async {
+              await ctrl.submitForm(
+                onSubmit: (_) async {
+                  await completer.future;
                 },
-                child: const Text('Submit Button'),
-              ),
-            ),
+              );
+            },
+            child: const Text('Submit Button'),
           ),
         ),
       );
@@ -562,7 +585,8 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('disables when disableWhenInvalid is true and form is invalid',
+    testWidgets(
+        'disables when disableWhenInvalid is true and form is invalid',
         (tester) async {
       final controller = NeatFormController<TestField>.fromValues(
         initialValues: {TestField.email: ''},
@@ -572,14 +596,12 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatSubmitButton<TestField>(
-              controller: controller,
-              disableWhenInvalid: true,
-              onPressed: (_) {},
-              child: const Text('Save'),
-            ),
+        testApp(
+          NeatSubmitButton<TestField>(
+            controller: controller,
+            disableWhenInvalid: true,
+            onPressed: (_) {},
+            child: const Text('Save'),
           ),
         ),
       );
@@ -588,37 +610,39 @@ void main() {
       controller.validateForm();
       await tester.pump();
 
-      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button =
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull); // Disabled!
 
       // Set valid value
       controller.setAndValidateField(TestField.email, 'valid@mail.com');
       await tester.pump();
 
-      final enabledButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final enabledButton =
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(enabledButton.onPressed, isNotNull); // Enabled!
     });
 
-    testWidgets('supports custom loadingWidget and null onPressed disables button',
+    testWidgets(
+        'supports custom loadingWidget and null onPressed disables button',
         (tester) async {
       final controller = NeatFormController<TestField>.fromValues(
         initialValues: {TestField.email: 'user@test.com'},
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NeatSubmitButton<TestField>(
-              controller: controller,
-              loadingWidget: const Text('Loading...'),
-              onPressed: null,
-              child: const Text('Disabled Submit'),
-            ),
+        testApp(
+          NeatSubmitButton<TestField>(
+            controller: controller,
+            loadingWidget: const Text('Loading...'),
+            onPressed: null,
+            child: const Text('Disabled Submit'),
           ),
         ),
       );
 
-      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      final button =
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNull);
     });
   });
@@ -626,8 +650,10 @@ void main() {
   group('Scopes updateShouldNotify & Builder didUpdateWidget Edge Cases', () {
     testWidgets('NeatFormScope and NeatFormArrayScope updateShouldNotify',
         (tester) async {
-      final ctrl1 = NeatFormController<TestField>.fromValues(initialValues: {});
-      final ctrl2 = NeatFormController<TestField>.fromValues(initialValues: {});
+      final ctrl1 =
+          NeatFormController<TestField>.fromValues(initialValues: {});
+      final ctrl2 =
+          NeatFormController<TestField>.fromValues(initialValues: {});
 
       final scope1 = NeatFormScope<TestField>(
         controller: ctrl1,
@@ -679,21 +705,25 @@ void main() {
       await tester.pumpWidget(
         StatefulBuilder(
           builder: (context, setState) {
-            return MaterialApp(
-              home: Scaffold(
-                body: NeatFormBuilder<TestField>(
-                  controller: activeCtrl,
-                  builder: (context, state, _) {
-                    return Text('Email: ${state.valueOf(TestField.email)}');
-                  },
-                ),
-                floatingActionButton: FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      activeCtrl = ctrl2;
-                    });
-                  },
-                ),
+            return testApp(
+              Stack(
+                children: [
+                  NeatFormBuilder<TestField>(
+                    controller: activeCtrl,
+                    builder: (context, state, _) {
+                      return Text('Email: ${state.valueOf(TestField.email)}');
+                    },
+                  ),
+                  GestureDetector(
+                    key: const Key('switch_form_ctrl'),
+                    onTap: () {
+                      setState(() {
+                        activeCtrl = ctrl2;
+                      });
+                    },
+                    child: const Text('Switch Form Ctrl'),
+                  ),
+                ],
               ),
             );
           },
@@ -702,7 +732,7 @@ void main() {
 
       expect(find.text('Email: c1@test.com'), findsOneWidget);
 
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byKey(const Key('switch_form_ctrl')));
       await tester.pump();
 
       expect(find.text('Email: c2@test.com'), findsOneWidget);
@@ -726,21 +756,26 @@ void main() {
       await tester.pumpWidget(
         StatefulBuilder(
           builder: (context, setState) {
-            return MaterialApp(
-              home: Scaffold(
-                body: NeatFormArrayBuilder<ItemField>(
-                  controller: activeCtrl,
-                  builder: (context, state, _) {
-                    return Text('First: ${state.items.first.form.valueOf(ItemField.name)}');
-                  },
-                ),
-                floatingActionButton: FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      activeCtrl = ctrl2;
-                    });
-                  },
-                ),
+            return testApp(
+              Stack(
+                children: [
+                  NeatFormArrayBuilder<ItemField>(
+                    controller: activeCtrl,
+                    builder: (context, state, _) {
+                      return Text(
+                          'First: ${state.items.first.form.valueOf(ItemField.name)}');
+                    },
+                  ),
+                  GestureDetector(
+                    key: const Key('switch_array_ctrl'),
+                    onTap: () {
+                      setState(() {
+                        activeCtrl = ctrl2;
+                      });
+                    },
+                    child: const Text('Switch Array Ctrl'),
+                  ),
+                ],
               ),
             );
           },
@@ -749,7 +784,7 @@ void main() {
 
       expect(find.text('First: Array1'), findsOneWidget);
 
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byKey(const Key('switch_array_ctrl')));
       await tester.pump();
 
       expect(find.text('First: Array2'), findsOneWidget);

@@ -11,29 +11,31 @@ Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạ
 
 ---
 
-<a name="tiếng-việt"></a>
+<a id="tieng-viet"></a>
+<a id="muc-luc"></a>
 ## 📑 Mục Lục
-- [1. 🇻🇳 Giới thiệu](#1--giới-thiệu)
-- [2. ✨ Tính năng nổi bật](#2--tính-năng-nổi-bật)
-- [3. 🏗️ Sơ đồ Kiến trúc & Luồng hoạt động](#3-️-sơ-đồ-kiến-trúc--luồng-hoạt-động)
-- [4. 📦 Cài đặt](#4--cài-đặt)
-- [5. 🚀 Hướng dẫn sử dụng nhanh](#5--hướng-dẫn-sử-dụng-nhanh)
-  - [Cách 1: Sử dụng bộ NeatForm UI Builders Suite (Tiết kiệm 70% Boilerplate)](#cách-1-sử-dụng-bộ-neatform-ui-builders-suite-tiết-kiệm-70-boilerplate)
-  - [Cách 2: Flutter Native với `ListenableBuilder`](#cách-2-flutter-native-với-listenablebuilder)
-  - [Cách 3: Tích hợp hoàn hảo với Riverpod](#cách-3-tích-hợp-hoàn-hảo-với-riverpod)
-  - [Cách 4: Tích hợp với BLoC / Cubit](#cách-4-tích-hợp-với-bloc--cubit)
-- [6. ✈️ Dynamic Form Array (`NeatFormArray`) — Danh sách Form Động](#6-️-dynamic-form-array-neatformarray--danh-sách-form-động)
-- [7. 🔄 Vòng đời Submit Form (Submission Lifecycle)](#7--vòng-đời-submit-form-submission-lifecycle)
-- [8. 📋 Bảng tra cứu Built-in Validators (Cheat Sheet)](#8--bảng-tra-cứu-built-in-validators-cheat-sheet)
-- [9. 🌐 Đa ngôn ngữ (Localization & Error Resolver)](#9--đa-ngôn-ngữ-localization--error-resolver)
-- [10. 🎨 Bộ định dạng đầu vào & Masking (`NeatInputFormatters`)](#10--bộ-định-dạng-đầu-vào--masking-neatinputformatters)
-- [11. 📊 Giám sát sự kiện & Analytics (`NeatFormObserver`)](#11--giám-sát-sự-kiện--analytics-neatformobserver)
-- [12. ⚡ Kiểm tra bất đồng bộ chống Race-Condition (Async Validation)](#12--kiểm-tra-bất-đồng-bộ-chống-race-condition-async-validation)
-- [13. 📱 Ứng dụng mẫu (Showcase App)](#13--ứng-dụng-mẫu-showcase-app)
-- [14. 📝 Giấy phép (License)](#14--giấy-phép-license)
+- [1. 🇻🇳 Giới thiệu](#gioi-thieu)
+- [2. ✨ Tính năng nổi bật](#tinh-nang-noi-bat)
+- [3. 🏗️ Sơ đồ Kiến trúc & Luồng hoạt động](#kien-truc)
+- [4. 📦 Cài đặt](#cai-dat)
+- [5. 🚀 Hướng dẫn sử dụng nhanh](#huong-dan-su-dung)
+  - [Cách 1: Bộ NeatForm UI Builders Suite (Tiết kiệm 70% Boilerplate)](#cach-1-ui-builders)
+  - [Cách 2: Flutter Native với `ListenableBuilder`](#cach-2-native)
+  - [Cách 3: Tích hợp hoàn hảo với Riverpod](#cach-3-riverpod)
+  - [Cách 4: Tích hợp với BLoC / Cubit](#cach-4-bloc)
+- [6. ✈️ Dynamic Form Array (`NeatFormArray`) — Danh sách Form Động](#dynamic-array)
+- [7. 🔄 Vòng đời Submit Form (Submission Lifecycle)](#submission-lifecycle)
+- [8. 📋 Bảng tra cứu Built-in Validators (Cheat Sheet)](#validators-cheatsheet)
+- [9. 🌐 Đa ngôn ngữ (Localization & Error Resolver)](#localization)
+- [10. 🎨 Bộ định dạng đầu vào & Masking (`NeatInputFormatters`)](#input-formatters)
+- [11. 📊 Giám sát sự kiện & Analytics (`NeatFormObserver`)](#form-observer)
+- [12. ⚡ Kiểm tra bất đồng bộ chống Race-Condition (Async Validation)](#async-validation)
+- [13. 📱 Ứng dụng mẫu (Showcase App)](#showcase-app)
+- [14. 📝 Giấy phép (License)](#license)
 
 ---
 
+<a id="gioi-thieu"></a>
 ## 1. 🇻🇳 Giới thiệu
 
 **`neat_form`** được thiết kế theo tư duy **Headless (Zero UI Coupling)**, **State-driven**, và **Immutable**. Package giải phóng bạn khỏi sự phức tạp của form validation trong Flutter, hoạt động độc lập hoặc tích hợp liền mạch với mọi thư viện State Management (Riverpod, BLoC, Cubit, Signals, v.v.).
@@ -45,6 +47,7 @@ Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạ
 
 ---
 
+<a id="tinh-nang-noi-bat"></a>
 ## 2. ✨ Tính năng nổi bật
 
 * 🚀 **Zero UI Coupling (Headless Form):** Tách biệt logic và giao diện, tự do tùy biến 100% UI theo Design System riêng.
@@ -57,6 +60,7 @@ Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạ
 
 ---
 
+<a id="kien-truc"></a>
 ## 3. 🏗️ Sơ đồ Kiến trúc & Luồng hoạt động
 
 `neat_form` phân tách rành mạch 3 tầng: **UI Layer** ➔ **State Management Layer** ➔ **Core Logic Engine**.
@@ -101,6 +105,7 @@ flowchart TD
 
 ---
 
+<a id="cai-dat"></a>
 ## 4. 📦 Cài đặt
 
 Thêm `neat_form` vào file `pubspec.yaml`:
@@ -117,9 +122,11 @@ flutter pub add neat_form
 
 ---
 
+<a id="huong-dan-su-dung"></a>
 ## 5. 🚀 Hướng dẫn sử dụng nhanh
 
-### Cách 1: Sử dụng bộ NeatForm UI Builders Suite (Tiết kiệm 70% Boilerplate)
+<a id="cach-1-ui-builders"></a>
+### Cách 1: Bộ NeatForm UI Builders Suite (Tiết kiệm 70% Boilerplate)
 
 Bộ Widget UI Builders cung cấp khả năng re-render scoped (chỉ rebuild đúng ô input bị thay đổi) và tự động chia sẻ controller qua `BuildContext`:
 
@@ -184,6 +191,7 @@ class ModernLoginForm extends StatelessWidget {
 
 ---
 
+<a id="cach-2-native"></a>
 ### Cách 2: Flutter Native với `ListenableBuilder`
 
 Nếu bạn muốn tự kiểm soát toàn bộ vòng đời widget:
@@ -247,6 +255,7 @@ class NativeLoginFormState extends State<NativeLoginForm> {
 
 ---
 
+<a id="cach-3-riverpod"></a>
 ### Cách 3: Tích hợp hoàn hảo với Riverpod
 
 Sử dụng `NeatFormNotifierMixin` trong Notifier của Riverpod:
@@ -282,6 +291,7 @@ class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>> with NeatFormN
 
 ---
 
+<a id="cach-4-bloc"></a>
 ### Cách 4: Tích hợp với BLoC / Cubit
 
 Sử dụng `NeatFormCubitMixin`:
@@ -313,6 +323,7 @@ class LoginCubit extends Cubit<NeatFormState<LoginFormKey>> with NeatFormCubitMi
 
 ---
 
+<a id="dynamic-array"></a>
 ## 6. ✈️ Dynamic Form Array (`NeatFormArray`) — Danh sách Form Động
 
 Hỗ trợ các biểu mẫu dạng danh sách (thêm/xóa/sắp xếp nhiều hành khách, địa chỉ, sản phẩm) với ID độc lập và validation từng phần tử:
@@ -343,6 +354,7 @@ guestsController.reorderItem(0, 2);     // Sắp xếp lại (dùng với Reorde
 
 ---
 
+<a id="submission-lifecycle"></a>
 ## 7. 🔄 Vòng đời Submit Form (Submission Lifecycle)
 
 <p align="center">
@@ -357,6 +369,7 @@ guestsController.reorderItem(0, 2);     // Sắp xếp lại (dùng với Reorde
 
 ---
 
+<a id="validators-cheatsheet"></a>
 ## 8. 📋 Bảng tra cứu Built-in Validators (Cheat Sheet)
 
 | Nhóm | Tên Validator | Mô tả |
@@ -388,6 +401,7 @@ guestsController.reorderItem(0, 2);     // Sắp xếp lại (dùng với Reorde
 
 ---
 
+<a id="localization"></a>
 ## 9. 🌐 Đa ngôn ngữ (Localization & Error Resolver)
 
 Tự động ánh xạ mã lỗi thành thông điệp đa ngôn ngữ và nội suy tham số:
@@ -405,6 +419,7 @@ print(errorResolver.resolve(fieldState.error!));
 
 ---
 
+<a id="input-formatters"></a>
 ## 10. 🎨 Bộ định dạng đầu vào & Masking (`NeatInputFormatters`)
 
 Định dạng văn bản thời gian thực ngay khi người dùng gõ phím:
@@ -425,6 +440,7 @@ TextField(inputFormatters: [NeatInputFormatters.uppercase(), NeatInputFormatters
 
 ---
 
+<a id="form-observer"></a>
 ## 11. 📊 Giám sát sự kiện & Analytics (`NeatFormObserver`)
 
 Theo dõi toàn bộ tương tác form để ghi log hoặc gửi dữ liệu phân tích (Telemetry/Analytics):
@@ -441,6 +457,7 @@ class AppFormObserver<K> extends NeatFormObserver<K> {
 
 ---
 
+<a id="async-validation"></a>
 ## 12. ⚡ Kiểm tra bất đồng bộ chống Race-Condition (Async Validation)
 
 Tự động hủy kết quả kiểm tra cũ khi người dùng tiếp tục gõ phím, loại bỏ hoàn toàn lỗi hiển thị sai trạng thái khi mạng chậm:
@@ -458,6 +475,7 @@ await formController.validateFieldAsync(
 
 ---
 
+<a id="showcase-app"></a>
 ## 13. 📱 Ứng dụng mẫu (Showcase App)
 
 Xem mã nguồn hoàn chỉnh với đầy đủ các tab showcase trong thư mục [`example/`](example):
@@ -469,6 +487,7 @@ flutter run -d chrome
 
 ---
 
+<a id="license"></a>
 ## 14. 📝 Giấy phép (License)
 
 Dự án được phát hành theo giấy phép **MIT License**. Bạn toàn quyền sử dụng, tùy biến và tích hợp vào các dự án thương mại hoàn toàn miễn phí.

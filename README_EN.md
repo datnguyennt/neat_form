@@ -11,28 +11,30 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 
 ---
 
+<a id="table-of-contents"></a>
 ## 📑 Table of Contents
-- [1. 🇬🇧 Overview](#1--overview)
-- [2. ✨ Key Features](#2--key-features)
-- [3. 🏗️ Architecture & Data Flow](#3-️-architecture--data-flow)
-- [4. 📦 Installation](#4--installation)
-- [5. 🚀 Quick Start Guide](#5--quick-start-guide)
-  - [Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)](#method-1-neatform-ui-builders-suite-70-less-boilerplate)
-  - [Method 2: Flutter Native with `ListenableBuilder`](#method-2-flutter-native-with-listenablebuilder)
-  - [Method 3: Seamless Riverpod Integration](#method-3-seamless-riverpod-integration)
-  - [Method 4: BLoC / Cubit Integration](#method-4-bloc--cubit-integration)
-- [6. ✈️ Dynamic Form Array (`NeatFormArray`)](#6-️-dynamic-form-array-neatformarray)
-- [7. 🔄 Form Submission Lifecycle](#7--form-submission-lifecycle)
-- [8. 📋 Built-in Validators (Cheat Sheet)](#8--built-in-validators-cheat-sheet)
-- [9. 🌐 Localization & Error Resolution](#9--localization--error-resolution)
-- [10. 🎨 Input Formatters & Masking (`NeatInputFormatters`)](#10--input-formatters--masking-neatinputformatters)
-- [11. 📊 Event Tracking & Analytics (`NeatFormObserver`)](#11--event-tracking--analytics-neatformobserver)
-- [12. ⚡ Race-Condition-Free Async Validation](#12--race-condition-free-async-validation)
-- [13. 📱 Showcase App](#13--showcase-app)
-- [14. 📝 License](#14--license)
+- [1. 🇬🇧 Overview](#overview)
+- [2. ✨ Key Features](#key-features)
+- [3. 🏗️ Architecture & Data Flow](#architecture)
+- [4. 📦 Installation](#installation)
+- [5. 🚀 Quick Start Guide](#quick-start)
+  - [Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)](#method-1-ui-builders)
+  - [Method 2: Flutter Native with `ListenableBuilder`](#method-2-native)
+  - [Method 3: Seamless Riverpod Integration](#method-3-riverpod)
+  - [Method 4: BLoC / Cubit Integration](#method-4-bloc)
+- [6. ✈️ Dynamic Form Array (`NeatFormArray`)](#dynamic-array)
+- [7. 🔄 Form Submission Lifecycle](#submission-lifecycle)
+- [8. 📋 Built-in Validators (Cheat Sheet)](#validators-cheatsheet)
+- [9. 🌐 Localization & Error Resolution](#localization)
+- [10. 🎨 Input Formatters & Masking (`NeatInputFormatters`)](#input-formatters)
+- [11. 📊 Event Tracking & Analytics (`NeatFormObserver`)](#form-observer)
+- [12. ⚡ Race-Condition-Free Async Validation](#async-validation)
+- [13. 📱 Showcase App](#showcase-app)
+- [14. 📝 License](#license)
 
 ---
 
+<a id="overview"></a>
 ## 1. 🇬🇧 Overview
 
 **`neat_form`** is built around **Headless Architecture (Zero UI Coupling)**, **State-driven**, and **Immutable** design principles. It eliminates the boilerplate and complexity of form validation in Flutter, working out-of-the-box as a standalone solution or integrating seamlessly with any state manager (Riverpod, BLoC, Cubit, Signals, MobX, etc.).
@@ -44,6 +46,7 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 
 ---
 
+<a id="key-features"></a>
 ## 2. ✨ Key Features
 
 * 🚀 **Zero UI Coupling (Headless Form):** Complete separation of logic and presentation. Design any custom UI without framework constraints.
@@ -56,6 +59,7 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 
 ---
 
+<a id="architecture"></a>
 ## 3. 🏗️ Architecture & Data Flow
 
 `neat_form` cleanly divides concerns across 3 distinct layers: **UI Layer** ➔ **State Management Layer** ➔ **Core Logic Engine**.
@@ -100,6 +104,7 @@ flowchart TD
 
 ---
 
+<a id="installation"></a>
 ## 4. 📦 Installation
 
 Add `neat_form` to your `pubspec.yaml`:
@@ -116,8 +121,10 @@ flutter pub add neat_form
 
 ---
 
+<a id="quick-start"></a>
 ## 5. 🚀 Quick Start Guide
 
+<a id="method-1-ui-builders"></a>
 ### Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)
 
 The UI Builders Suite provides scoped reactivity (only re-rendering the specific input being edited) and automatic controller resolution via `BuildContext`:
@@ -183,6 +190,7 @@ class ModernLoginForm extends StatelessWidget {
 
 ---
 
+<a id="method-2-native"></a>
 ### Method 2: Flutter Native with `ListenableBuilder`
 
 For manual widget lifecycle management:
@@ -246,6 +254,7 @@ class NativeLoginFormState extends State<NativeLoginForm> {
 
 ---
 
+<a id="method-3-riverpod"></a>
 ### Method 3: Seamless Riverpod Integration
 
 Use `NeatFormNotifierMixin` within a Riverpod `Notifier`:
@@ -281,6 +290,7 @@ class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>> with NeatFormN
 
 ---
 
+<a id="method-4-bloc"></a>
 ### Method 4: BLoC / Cubit Integration
 
 Use `NeatFormCubitMixin`:
@@ -312,6 +322,7 @@ class LoginCubit extends Cubit<NeatFormState<LoginFormKey>> with NeatFormCubitMi
 
 ---
 
+<a id="dynamic-array"></a>
 ## 6. ✈️ Dynamic Form Array (`NeatFormArray`)
 
 Effortlessly manage dynamic lists of sub-forms (e.g. guests, shipping addresses, order items) with isolated IDs and validation:
@@ -342,6 +353,7 @@ guestsController.reorderItem(0, 2);     // Reorder item (perfect for Reorderable
 
 ---
 
+<a id="submission-lifecycle"></a>
 ## 7. 🔄 Form Submission Lifecycle
 
 <p align="center">
@@ -356,6 +368,7 @@ guestsController.reorderItem(0, 2);     // Reorder item (perfect for Reorderable
 
 ---
 
+<a id="validators-cheatsheet"></a>
 ## 8. 📋 Built-in Validators (Cheat Sheet)
 
 | Category | Validator | Description |
@@ -387,6 +400,7 @@ guestsController.reorderItem(0, 2);     // Reorder item (perfect for Reorderable
 
 ---
 
+<a id="localization"></a>
 ## 9. 🌐 Localization & Error Resolution
 
 Easily translate error codes into localized strings with automatic parameter interpolation:
@@ -404,6 +418,7 @@ print(errorResolver.resolve(fieldState.error!));
 
 ---
 
+<a id="input-formatters"></a>
 ## 10. 🎨 Input Formatters & Masking (`NeatInputFormatters`)
 
 Real-time input formatting as the user types:
@@ -424,6 +439,7 @@ TextField(inputFormatters: [NeatInputFormatters.uppercase(), NeatInputFormatters
 
 ---
 
+<a id="form-observer"></a>
 ## 11. 📊 Event Tracking & Analytics (`NeatFormObserver`)
 
 Monitor all form events for logging, analytics, or debugging:
@@ -440,6 +456,7 @@ class AppFormObserver<K> extends NeatFormObserver<K> {
 
 ---
 
+<a id="async-validation"></a>
 ## 12. ⚡ Race-Condition-Free Async Validation
 
 Automatically cancels obsolete validation requests when the user continues typing:
@@ -457,6 +474,7 @@ await formController.validateFieldAsync(
 
 ---
 
+<a id="showcase-app"></a>
 ## 13. 📱 Showcase App
 
 Explore the complete multi-tab showcase application in the [`example/`](example) directory:
@@ -468,6 +486,7 @@ flutter run -d chrome
 
 ---
 
+<a id="license"></a>
 ## 14. 📝 License
 
 Released under the **MIT License**. Free for personal and commercial projects.

@@ -216,25 +216,34 @@ class _NeatFieldBuilderState<K, T> extends State<NeatFieldBuilder<K, T>> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final effectiveController =
-        widget.controller ?? NeatFormScope.of<K>(context);
+        widget.controller ?? NeatFormScope.maybeOf<K>(context);
     if (_controller != effectiveController) {
       _controller?.removeListener(_onControllerChanged);
       _controller = effectiveController;
-      _lastState = _controller!.field<T>(widget.field);
-      _controller!.addListener(_onControllerChanged);
+      if (_controller != null) {
+        _lastState = _controller!.field<T>(widget.field);
+        _controller!.addListener(_onControllerChanged);
+      }
     }
   }
 
   @override
   void didUpdateWidget(NeatFieldBuilder<K, T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
+    final controllerChanged = widget.controller != oldWidget.controller;
+    final fieldChanged = widget.field != oldWidget.field;
+
+    if (controllerChanged) {
       _controller?.removeListener(_onControllerChanged);
-      _controller = widget.controller ?? NeatFormScope.of<K>(context);
-      _lastState = _controller!.field<T>(widget.field);
-      _controller!.addListener(_onControllerChanged);
-    } else if (widget.field != oldWidget.field) {
-      _lastState = _controller!.field<T>(widget.field);
+      _controller = widget.controller ?? NeatFormScope.maybeOf<K>(context);
+      if (_controller != null) {
+        _lastState = _controller!.field<T>(widget.field);
+        _controller!.addListener(_onControllerChanged);
+      }
+    } else if (fieldChanged) {
+      if (_controller != null) {
+        _lastState = _controller!.field<T>(widget.field);
+      }
     }
   }
 
@@ -246,13 +255,14 @@ class _NeatFieldBuilderState<K, T> extends State<NeatFieldBuilder<K, T>> {
 
   void _onControllerChanged() {
     if (_controller == null || !mounted) return;
+    final previousState = _lastState;
     final newState = _controller!.field<T>(widget.field);
+    _lastState = newState;
     final shouldRebuild =
-        widget.buildWhen?.call(_lastState, newState) ?? (_lastState != newState);
+        widget.buildWhen?.call(previousState, newState) ??
+            (previousState != newState);
     if (shouldRebuild) {
-      setState(() {
-        _lastState = newState;
-      });
+      setState(() {});
     }
   }
 
@@ -323,12 +333,14 @@ class _NeatFormBuilderState<K> extends State<NeatFormBuilder<K>> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final effectiveController =
-        widget.controller ?? NeatFormScope.of<K>(context);
+        widget.controller ?? NeatFormScope.maybeOf<K>(context);
     if (_controller != effectiveController) {
       _controller?.removeListener(_onControllerChanged);
       _controller = effectiveController;
-      _lastState = _controller!.state;
-      _controller!.addListener(_onControllerChanged);
+      if (_controller != null) {
+        _lastState = _controller!.state;
+        _controller!.addListener(_onControllerChanged);
+      }
     }
   }
 
@@ -337,9 +349,11 @@ class _NeatFormBuilderState<K> extends State<NeatFormBuilder<K>> {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
       _controller?.removeListener(_onControllerChanged);
-      _controller = widget.controller ?? NeatFormScope.of<K>(context);
-      _lastState = _controller!.state;
-      _controller!.addListener(_onControllerChanged);
+      _controller = widget.controller ?? NeatFormScope.maybeOf<K>(context);
+      if (_controller != null) {
+        _lastState = _controller!.state;
+        _controller!.addListener(_onControllerChanged);
+      }
     }
   }
 
@@ -351,13 +365,14 @@ class _NeatFormBuilderState<K> extends State<NeatFormBuilder<K>> {
 
   void _onControllerChanged() {
     if (_controller == null || !mounted) return;
+    final previousState = _lastState;
     final newState = _controller!.state;
+    _lastState = newState;
     final shouldRebuild =
-        widget.buildWhen?.call(_lastState, newState) ?? (_lastState != newState);
+        widget.buildWhen?.call(previousState, newState) ??
+            (previousState != newState);
     if (shouldRebuild) {
-      setState(() {
-        _lastState = newState;
-      });
+      setState(() {});
     }
   }
 
@@ -428,12 +443,14 @@ class _NeatFormArrayBuilderState<K> extends State<NeatFormArrayBuilder<K>> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final effectiveController =
-        widget.controller ?? NeatFormArrayScope.of<K>(context);
+        widget.controller ?? NeatFormArrayScope.maybeOf<K>(context);
     if (_controller != effectiveController) {
       _controller?.removeListener(_onControllerChanged);
       _controller = effectiveController;
-      _lastState = _controller!.state;
-      _controller!.addListener(_onControllerChanged);
+      if (_controller != null) {
+        _lastState = _controller!.state;
+        _controller!.addListener(_onControllerChanged);
+      }
     }
   }
 
@@ -442,9 +459,11 @@ class _NeatFormArrayBuilderState<K> extends State<NeatFormArrayBuilder<K>> {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
       _controller?.removeListener(_onControllerChanged);
-      _controller = widget.controller ?? NeatFormArrayScope.of<K>(context);
-      _lastState = _controller!.state;
-      _controller!.addListener(_onControllerChanged);
+      _controller = widget.controller ?? NeatFormArrayScope.maybeOf<K>(context);
+      if (_controller != null) {
+        _lastState = _controller!.state;
+        _controller!.addListener(_onControllerChanged);
+      }
     }
   }
 
@@ -456,13 +475,14 @@ class _NeatFormArrayBuilderState<K> extends State<NeatFormArrayBuilder<K>> {
 
   void _onControllerChanged() {
     if (_controller == null || !mounted) return;
+    final previousState = _lastState;
     final newState = _controller!.state;
+    _lastState = newState;
     final shouldRebuild =
-        widget.buildWhen?.call(_lastState, newState) ?? (_lastState != newState);
+        widget.buildWhen?.call(previousState, newState) ??
+            (previousState != newState);
     if (shouldRebuild) {
-      setState(() {
-        _lastState = newState;
-      });
+      setState(() {});
     }
   }
 
