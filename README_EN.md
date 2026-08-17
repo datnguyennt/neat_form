@@ -2,9 +2,9 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.1.0--preview.2-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 78 Passed](https://img.shields.io/badge/tests-78%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 125 Passed](https://img.shields.io/badge/tests-125%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
@@ -49,6 +49,62 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 - ⏱️ **Race Condition Protection in Async Validations:** Token invalidation mechanism ensures slow in-flight async requests never overwrite newer user input.
 - 🔄 **Form Submission Lifecycle:** Built-in 4-state lifecycle (`idle`, `submitting`, `success`, `failure`).
 - 🛠️ **25+ Built-in Validators:** Strings, numbers, regex, Luhn algorithm credit card, dates, booleans, and collections.
+- 🎨 **Built-in Input Formatters & Masking:** Real-time currency, credit card, custom masks, date formats, and casing utilities in pure Flutter SDK (0 external dependencies).
+
+---
+
+### 🏗️ Architecture & Workflow Diagrams
+
+#### 1. Data Flow & Overall Architecture (Headless Pattern)
+
+`neat_form` cleanly decouples your application into 3 layers: **UI Layer (Headless Widgets)** ➔ **State Management Layer (Mixins & Controllers)** ➔ **Core Logic Engine**.
+
+```mermaid
+flowchart TD
+    subgraph UI["🎨 UI Layer (Zero UI Coupling)"]
+        Input["TextField / Custom Inputs"]
+        Btn["Submit Button / Action UI"]
+    end
+
+    subgraph StateMgmt["⚡ State Management Layer"]
+        direction TB
+        Riverpod["Riverpod Notifier<br/>(NeatFormNotifierMixin)"]
+        Bloc["BLoC / Cubit<br/>(NeatFormCubitMixin)"]
+        Native["Flutter Native<br/>(NeatFormController)"]
+    end
+
+    subgraph CoreEngine["🧠 neat_form Core Engine"]
+        direction TB
+        Validators["Validation Engine<br/>• 25+ Built-in Rules<br/>• Cross-field (match, when)<br/>• Async Token Engine"]
+        FormState["NeatFormState&lt;K&gt;<br/>• Immutable Map&lt;K, NeatFieldState&gt;<br/>• Type-Safe Generics (K Enum)"]
+        Lifecycle["Submission Lifecycle<br/>(idle ➔ submitting ➔ success / failure)"]
+        Resolver["NeatErrorResolver<br/>(i18n & Param Interpolation)"]
+        Observer["NeatFormObserver&lt;K&gt;<br/>(Analytics & Telemetry)"]
+    end
+
+    Input -->|"1. User types (onChanged)"| StateMgmt
+    Btn -->|"2. Trigger submitForm()"| StateMgmt
+    StateMgmt -->|"3. Execute validation"| Validators
+    Validators -->|"4. Produce Immutable State"| FormState
+    FormState -->|"5. Update Lifecycle"| Lifecycle
+    Lifecycle -.->|"Emit events"| Observer
+    FormState -->|"Resolve error strings"| Resolver
+    FormState ==>|"6. Surgical Rebuild (select / watch)"| UI
+```
+
+#### 2. Multi-State Management Ecosystem Compatibility
+
+```mermaid
+graph LR
+    Core["neat_form Core"]
+    
+    Core -->|1 Mixin| R1["Riverpod Notifier"]
+    Core -->|Nested Mixin| R2["Riverpod + Freezed Screen State"]
+    Core -->|Cubit Mixin| B1["BLoC / Cubit"]
+    Core -->|Nested Cubit Mixin| B2["Cubit + Freezed Screen State"]
+    Core -->|ChangeNotifier| N1["Flutter Native (ListenableBuilder)"]
+    Core -->|Pure State Model| O1["Signals / MobX / GetX"]
+```
 
 ---
 
@@ -58,7 +114,7 @@ Add `neat_form` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.0-preview.3
+  neat_form: ^1.1.1
 ```
 
 Or run:
@@ -302,7 +358,7 @@ class _LoginFormPageState extends State<LoginFormPage> {
                   : () async {
                       await _form.submitForm(
                         onSubmit: (values) async {
-                          print('Submitted values: $values');
+                          print('Valid form values: $values');
                         },
                       );
                     },
@@ -316,6 +372,33 @@ class _LoginFormPageState extends State<LoginFormPage> {
     );
   }
 }
+```
+
+---
+
+### 🔄 Form Submission Lifecycle
+
+`neat_form` features a built-in 4-state state machine via `NeatSubmissionStatus`:
+
+```mermaid
+stateDiagram-v2
+    [*] --> idle : Form Initialized (Initial State)
+
+    idle --> validating : User Triggers Submit (submitForm)
+    
+    state validating <<choice>>
+    validating --> idle : Form Has Errors (showError = true)
+    validating --> submitting : All Fields Valid
+
+    state submitting {
+        [*] --> executing_callback : Execute onSubmit(values)
+    }
+
+    submitting --> success : onSubmit() Completed Successfully
+    submitting --> failure : onSubmit() Threw Exception / Error
+
+    success --> idle : resetForm()
+    failure --> idle : User Modifies Field / Retries
 ```
 
 ---
@@ -385,6 +468,75 @@ final errorText = resolver.resolve(context, fieldState.error!, fieldName: 'Passw
 
 ---
 
+### 🎨 Built-in Input Formatters & Masking (`NeatInputFormatters`)
+
+`neat_form` provides a comprehensive suite of pure Flutter `TextInputFormatter` utilities (0 external dependencies) with accurate cursor preservation:
+
+#### 1. Real-Time Currency Formatter (`currency`)
+```dart
+final currencyFormatter = NeatInputFormatters.currency(
+  thousandSeparator: ',',
+  decimalSeparator: '.',
+  prefix: r'$',
+  allowDecimals: true,
+);
+
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [currencyFormatter],
+  onChanged: (val) {
+    // Extract raw numeric value (num / double / int) for form state
+    final amount = currencyFormatter.getNumericValue(val);
+    form.setField(PaymentKey.amount, amount);
+  },
+);
+```
+
+#### 2. Payment Card Formatter (`creditCard`)
+Auto-detects card brand (Visa, Mastercard, Amex, JCB, Discover) and applies 4-4-4-4 or 4-6-5 grouping:
+```dart
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [NeatInputFormatters.creditCard()],
+  onChanged: (val) => form.setField(
+    PaymentKey.cardNumber,
+    NeatCardFormatter.getCleanCardNumber(val), // '4111222233334444'
+  ),
+);
+```
+
+#### 3. Custom Mask Formatter (`mask`)
+```dart
+final phoneFormatter = NeatInputFormatters.mask('(###) ###-####');
+
+TextField(
+  keyboardType: TextInputType.phone,
+  inputFormatters: [phoneFormatter],
+  onChanged: (val) => form.setField(
+    RegisterKey.phone,
+    phoneFormatter.getUnmaskedText(val), // '0901234567'
+  ),
+);
+```
+
+#### 4. Date Formatter (`date`)
+```dart
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [
+    NeatInputFormatters.date(format: NeatDateFormat.ddMMyyyy),
+  ],
+);
+```
+
+#### 5. Utility Text Formatters
+- `NeatInputFormatters.uppercase()`: Auto-capitalizes input (promo codes, license plates).
+- `NeatInputFormatters.lowercase()`: Auto-lowercases input (usernames, email handles).
+- `NeatInputFormatters.latinOnly()`: Permits only ASCII/latin characters `[a-zA-Z0-9_]`.
+- `NeatInputFormatters.noSpaces()`: Denies all whitespace characters.
+
+---
+
 ### 📊 Event Monitoring & Telemetry (Form Observer)
 
 `neat_form` provides `NeatFormObserver<K>` to track the entire form lifecycle, field updates, validation errors, and submission status — ideal for telemetry, analytics, and debugging:
@@ -418,6 +570,31 @@ class AppFormObserver extends NeatFormObserver<LoginFormKey> {
 ### ⚡ Async Validation with Race-Condition Protection
 
 Use `validateFieldAsync` with automatic sequence token invalidation so out-of-order network responses never corrupt newer user input:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User (Typing)
+    participant Field as NeatForm / FieldState
+    participant Engine as Async Token Engine
+    participant API as Backend Server / API
+
+    User->>Field: Types "alex" (Request 1)
+    Field->>Engine: validateFieldAsync("alex", token = 1)
+    Engine->>API: HTTP Check "alex" (Slow network: 500ms)
+
+    User->>Field: Types "alexander" (Request 2)
+    Field->>Engine: validateFieldAsync("alexander", token = 2)
+    Engine->>API: HTTP Check "alexander" (Fast network: 100ms)
+
+    API-->>Engine: Response for token = 2 (Valid)
+    Engine->>Engine: Match token: 2 == 2 (Current Token ✅)
+    Engine->>Field: Update FieldState (Valid!)
+
+    API-->>Engine: Response for token = 1 (Username taken)
+    Engine->>Engine: Match token: 1 != 2 (Stale Token ❌)
+    Note over Engine,Field: Outdated response safely discarded! UI is never overwritten.
+```
 
 ```dart
 await form.validateFieldAsync<String>(

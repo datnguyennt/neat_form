@@ -2,9 +2,9 @@
 
 Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạnh mẽ, type-safe (100% `Object?`) dành cho **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.1.0--preview.2-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 78 Passed](https://img.shields.io/badge/tests-78%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 125 Passed](https://img.shields.io/badge/tests-125%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](#tiếng-việt) | [English](README_EN.md)**
@@ -50,6 +50,62 @@ Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạ
 - ⏱️ **Chống Race Condition trong Async Validation:** Quản lý token tự động hủy kết quả cũ nếu dữ liệu thay đổi trước khi request mạng hoàn tất.
 - 🔄 **Submission Lifecycle:** Tự động quản lý 4 trạng thái nộp form (`idle`, `submitting`, `success`, `failure`).
 - 🛠️ **25+ Built-in Validators:** Đầy đủ từ chuỗi, số học, regex, thẻ tín dụng Luhn, ngày tháng, consent boolean cho tới mảng/danh sách động.
+- 🎨 **Built-in Input Formatters & Masking:** Định dạng tiền tệ thời gian thực, thẻ ngân hàng, mặt nạ chuỗi, ngày tháng, casing thuần Flutter SDK (0 external dependencies).
+
+---
+
+### 🏗️ Sơ đồ Kiến trúc & Luồng hoạt động (Architecture & Flow)
+
+#### 1. Luồng Dữ liệu & Kiến trúc Tổng thể (Headless Pattern)
+
+`neat_form` phân tách rành mạch 3 tầng: **UI Layer (Headless Widgets)** ➔ **State Management Layer (Mixins & Controllers)** ➔ **Core Logic Engine**.
+
+```mermaid
+flowchart TD
+    subgraph UI["🎨 UI Layer (Zero UI Coupling)"]
+        Input["TextField / Custom Inputs"]
+        Btn["Submit Button / Action UI"]
+    end
+
+    subgraph StateMgmt["⚡ State Management Layer"]
+        direction TB
+        Riverpod["Riverpod Notifier<br/>(NeatFormNotifierMixin)"]
+        Bloc["BLoC / Cubit<br/>(NeatFormCubitMixin)"]
+        Native["Flutter Native<br/>(NeatFormController)"]
+    end
+
+    subgraph CoreEngine["🧠 neat_form Core Engine"]
+        direction TB
+        Validators["Validation Engine<br/>• 25+ Built-in Rules<br/>• Cross-field (match, when)<br/>• Async Token Engine"]
+        FormState["NeatFormState&lt;K&gt;<br/>• Immutable Map&lt;K, NeatFieldState&gt;<br/>• Type-Safe Generics (K Enum)"]
+        Lifecycle["Submission Lifecycle<br/>(idle ➔ submitting ➔ success / failure)"]
+        Resolver["NeatErrorResolver<br/>(i18n & Param Interpolation)"]
+        Observer["NeatFormObserver&lt;K&gt;<br/>(Analytics & Telemetry)"]
+    end
+
+    Input -->|"1. User types (onChanged)"| StateMgmt
+    Btn -->|"2. Trigger submitForm()"| StateMgmt
+    StateMgmt -->|"3. Execute validation"| Validators
+    Validators -->|"4. Produce Immutable State"| FormState
+    FormState -->|"5. Update Lifecycle"| Lifecycle
+    Lifecycle -.->|"Emit events"| Observer
+    FormState -->|"Resolve error strings"| Resolver
+    FormState ==>|"6. Surgical Rebuild (select / watch)"| UI
+```
+
+#### 2. Tương thích Đa Nền tảng State Management
+
+```mermaid
+graph LR
+    Core["neat_form Core"]
+    
+    Core -->|1 Mixin| R1["Riverpod Notifier"]
+    Core -->|Nested Mixin| R2["Riverpod + Freezed Screen State"]
+    Core -->|Cubit Mixin| B1["BLoC / Cubit"]
+    Core -->|Nested Cubit Mixin| B2["Cubit + Freezed Screen State"]
+    Core -->|ChangeNotifier| N1["Flutter Native (ListenableBuilder)"]
+    Core -->|Pure State Model| O1["Signals / MobX / GetX"]
+```
 
 ---
 
@@ -59,7 +115,7 @@ Thêm `neat_form` vào file `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.0-preview.3
+  neat_form: ^1.1.1
 ```
 
 Hoặc chạy lệnh:
@@ -321,6 +377,33 @@ class _LoginFormPageState extends State<LoginFormPage> {
 
 ---
 
+### 🔄 Vòng đời Xử lý Submit Form (Submission Lifecycle)
+
+`neat_form` tích hợp sẵn máy trạng thái (State Machine) 4 bước thông qua `NeatSubmissionStatus`:
+
+```mermaid
+stateDiagram-v2
+    [*] --> idle : Khởi tạo Form (Initial State)
+
+    idle --> validating : Người dùng bấm Submit (submitForm)
+    
+    state validating <<choice>>
+    validating --> idle : Form có lỗi (showError = true)
+    validating --> submitting : Toàn bộ trường hợp lệ (All Valid)
+
+    state submitting {
+        [*] --> executing_callback : Thực thi onSubmit(values)
+    }
+
+    submitting --> success : onSubmit() thành công
+    submitting --> failure : onSubmit() ném lỗi (Catch error)
+
+    success --> idle : resetForm()
+    failure --> idle : Người dùng sửa dữ liệu / Thử lại
+```
+
+---
+
 ### 📋 Bảng tra cứu Built-in Validators (Cheat Sheet)
 
 | Nhóm | Validator | Mô tả |
@@ -386,6 +469,75 @@ final errorText = resolver.resolve(context, fieldState.error!, fieldName: 'Mật
 
 ---
 
+### 🎨 Bộ định dạng đầu vào & Masking (`NeatInputFormatters`)
+
+`neat_form` tích hợp sẵn bộ `TextInputFormatter` thuần Flutter (0 external dependencies) giúp tự động format và xử lý con trỏ chuẩn xác:
+
+#### 1. Định dạng Tiền tệ (`currency`)
+```dart
+final currencyFormatter = NeatInputFormatters.currency(
+  thousandSeparator: '.',
+  decimalSeparator: ',',
+  suffix: ' ₫',
+);
+
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [currencyFormatter],
+  onChanged: (val) {
+    // Trích xuất số thực double/int để lưu vào Form State
+    final amount = currencyFormatter.getNumericValue(val);
+    form.setField(PaymentKey.amount, amount);
+  },
+);
+```
+
+#### 2. Định dạng Thẻ ngân hàng (`creditCard`)
+Tự động nhận diện loại thẻ và ngắt cụm 4-4-4-4 (Visa/Mastercard/JCB) hoặc 4-6-5 (American Express):
+```dart
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [NeatInputFormatters.creditCard()],
+  onChanged: (val) => form.setField(
+    PaymentKey.cardNumber,
+    NeatCardFormatter.getCleanCardNumber(val), // '4111222233334444'
+  ),
+);
+```
+
+#### 3. Định dạng Mặt nạ chuỗi (`mask`)
+```dart
+// Số điện thoại, CCCD hoặc mã định danh
+final phoneFormatter = NeatInputFormatters.mask('(###) ###-####');
+
+TextField(
+  keyboardType: TextInputType.phone,
+  inputFormatters: [phoneFormatter],
+  onChanged: (val) => form.setField(
+    RegisterKey.phone,
+    phoneFormatter.getUnmaskedText(val), // '0901234567'
+  ),
+);
+```
+
+#### 4. Định dạng Ngày tháng (`date`)
+```dart
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [
+    NeatInputFormatters.date(format: NeatDateFormat.ddMMyyyy),
+  ],
+);
+```
+
+#### 5. Formatters tiện ích
+- `NeatInputFormatters.uppercase()`: Tự động viết hoa (mã giảm giá, biển số xe).
+- `NeatInputFormatters.lowercase()`: Tự động viết thường (username, email).
+- `NeatInputFormatters.latinOnly()`: Chỉ cho phép ký tự không dấu `[a-zA-Z0-9_]`.
+- `NeatInputFormatters.noSpaces()`: Chặn khoảng trắng.
+
+---
+
 ### 📊 Giám sát sự kiện & Analytics (Form Observer)
 
 `neat_form` cung cấp `NeatFormObserver<K>` để theo dõi toàn bộ vòng đời form, sự kiện thay đổi giá trị, lỗi validation, và trạng thái submit — lý tưởng cho analytics, telemetry và debug logging:
@@ -419,6 +571,31 @@ class AppFormObserver extends NeatFormObserver<LoginFormKey> {
 ### ⚡ Kiểm tra bất đồng bộ chống Race-Condition (Async Validation)
 
 Sử dụng `validateFieldAsync` với cơ chế sequence token tự động vô hiệu hóa kết quả của các request cũ nếu người dùng tiếp tục gõ phím:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Người dùng (Gõ phím)
+    participant Field as NeatForm / FieldState
+    participant Engine as Async Token Engine
+    participant API as Server / Backend API
+
+    User->>Field: Gõ "alex" (Request 1)
+    Field->>Engine: validateFieldAsync("alex", token = 1)
+    Engine->>API: Gọi API kiểm tra "alex" (Mạng trễ: 500ms)
+
+    User->>Field: Gõ tiếp "alexander" (Request 2)
+    Field->>Engine: validateFieldAsync("alexander", token = 2)
+    Engine->>API: Gọi API kiểm tra "alexander" (Mạng nhanh: 100ms)
+
+    API-->>Engine: Kết quả cho token = 2 (Hợp lệ)
+    Engine->>Engine: So khớp token: 2 == 2 (Token mới nhất ✅)
+    Engine->>Field: Cập nhật FieldState (Hợp lệ!)
+
+    API-->>Engine: Kết quả cho token = 1 (Tên đã tồn tại)
+    Engine->>Engine: So khớp token: 1 != 2 (Token đã cũ / Stale ❌)
+    Note over Engine,Field: Tự động hủy kết quả cũ! Giao diện không bị ghi đè sai.
+```
 
 ```dart
 await form.validateFieldAsync<String>(

@@ -1,4 +1,16 @@
-# 1.1.0
+# 1.2.0
+
+- **Built-in Input Formatters & Masking Suite (`NeatInputFormatters`):**
+  - Added zero-dependency Flutter input formatters preserving accurate mid-string cursor placement.
+  - `NeatCurrencyFormatter`: Real-time thousand/decimal separators, custom prefix/suffix, and numeric extractor (`getNumericValue() -> num?`).
+  - `NeatCardFormatter`: Auto card brand detection (Visa, Mastercard, Amex, JCB, Discover), 4-4-4-4 / 4-6-5 chunking, and clean number extractor.
+  - `NeatMaskFormatter`: Custom alphanumeric mask patterns with `getUnmaskedText()` helper.
+  - `NeatDateFormatter`: Formats `dd/MM/yyyy`, `yyyy/MM/dd`, `mm/dd/yyyy`, and `mm/yy` with boundary clamping and `getParsedDate() -> DateTime?`.
+  - Utility formatters: `uppercase()`, `lowercase()`, `latinOnly()`, `noSpaces()`.
+- **Enhanced Example App:** Live demonstration of real-time currency formatting, payment card formatting, and date masking.
+- **Comprehensive Test Suite:** 104 unit and widget tests passing with 0 warnings on `very_good_analysis`.
+
+# 1.1.1
 
 - **Ultra-Clean Riverpod Support:**
   - Added `NeatFormNotifierMixin<K>` to automatically bind state, eliminating all manual boilerplate overrides in `Notifier<NeatFormState<K>>`.

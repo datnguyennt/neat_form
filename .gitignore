@@ -14,3 +14,7 @@ pubspec.lock
 
 # FVM Version Cache
 .fvm/
+
+# Coverage
+coverage/
+doc/api/

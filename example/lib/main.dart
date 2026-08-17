@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:neat_form/neat_form.dart';
 
 void main() {
@@ -348,6 +349,11 @@ class FintechPaymentTab extends StatefulWidget {
 
 class _FintechPaymentTabState extends State<FintechPaymentTab> {
   late final NeatFormController<FintechKey> _form;
+  final _currencyFormatter = NeatInputFormatters.currency(
+    thousandSeparator: '.',
+    decimalSeparator: ',',
+    suffix: ' ₫',
+  );
 
   @override
   void initState() {
@@ -379,7 +385,6 @@ class _FintechPaymentTabState extends State<FintechPaymentTab> {
         FintechKey.amount: NeatValidators.combine([
           NeatValidators.required(message: 'Vui lòng nhập số tiền thanh toán'),
           NeatValidators.positive(message: 'Số tiền giao dịch phải lớn hơn 0'),
-          NeatValidators.decimalPrecision(2, message: 'Số tiền tối đa 2 chữ số thập phân'),
           NeatValidators.maxValue(100000000, message: 'Hạn mức giao dịch tối đa 100.000.000đ'),
         ]),
       },
@@ -409,13 +414,17 @@ class _FintechPaymentTabState extends State<FintechPaymentTab> {
             const SizedBox(height: 16),
             TextField(
               decoration: InputDecoration(
-                labelText: 'Số thẻ tín dụng / Ghi nợ (Luhn Algorithm)',
+                labelText: 'Số thẻ tín dụng / Ghi nợ (Tự động format & Luhn)',
                 hintText: '4532 0151 1283 0366',
                 prefixIcon: const Icon(Icons.credit_card_outlined),
                 errorText: card.errorMessage,
               ),
               keyboardType: TextInputType.number,
-              onChanged: (val) => _form.setField(FintechKey.cardNumber, val),
+              inputFormatters: [NeatInputFormatters.creditCard()],
+              onChanged: (val) => _form.setField(
+                FintechKey.cardNumber,
+                NeatCardFormatter.getCleanCardNumber(val),
+              ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -428,6 +437,10 @@ class _FintechPaymentTabState extends State<FintechPaymentTab> {
                       prefixIcon: const Icon(Icons.calendar_month_outlined),
                       errorText: expiry.errorMessage,
                     ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      NeatInputFormatters.date(format: NeatDateFormat.mmYy),
+                    ],
                     onChanged: (val) => _form.setField(FintechKey.cardExpiry, val),
                   ),
                 ),
@@ -441,6 +454,10 @@ class _FintechPaymentTabState extends State<FintechPaymentTab> {
                       errorText: cvv.errorMessage,
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(3),
+                    ],
                     onChanged: (val) => _form.setField(FintechKey.cvv, val),
                   ),
                 ),
@@ -449,13 +466,17 @@ class _FintechPaymentTabState extends State<FintechPaymentTab> {
             const SizedBox(height: 16),
             TextField(
               decoration: InputDecoration(
-                labelText: 'Số tiền thanh toán (VNĐ)',
-                hintText: '500000',
+                labelText: 'Số tiền thanh toán (Tự động format tiền tệ)',
+                hintText: '500.000 ₫',
                 prefixIcon: const Icon(Icons.monetization_on_outlined),
                 errorText: amount.errorMessage,
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (val) => _form.setField(FintechKey.amount, num.tryParse(val)),
+              keyboardType: TextInputType.number,
+              inputFormatters: [_currencyFormatter],
+              onChanged: (val) => _form.setField(
+                FintechKey.amount,
+                _currencyFormatter.getNumericValue(val),
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
