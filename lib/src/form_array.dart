@@ -1202,3 +1202,407 @@ mixin NeatFormArrayCubitMixin<K> {
     emit(_NeatFormArrayEngine.resetArray<K>(state: state));
   }
 }
+
+/// Mixin for **Riverpod** Notifiers managing a nested form array inside a Screen State [S].
+mixin NeatNestedFormArrayNotifierMixin<S, K> {
+  /// The current Screen State [S] (e.g. Riverpod `state`).
+  S get state;
+
+  /// Setter to update the Screen State [S] (e.g. Riverpod `state = ...`).
+  set state(S value);
+
+  /// Extracts the nested [NeatFormArrayState<K>] from the parent state [S].
+  NeatFormArrayState<K> getArrayForm(S state);
+
+  /// Returns a copy of [state] with the nested [arrayForm] updated.
+  S updateArrayForm(S state, NeatFormArrayState<K> arrayForm);
+
+  /// Current array form state.
+  NeatFormArrayState<K> get arrayState => getArrayForm(state);
+
+  /// Map of validators for each item's fields.
+  @protected
+  Map<K, NeatValidator<Object?>> get itemValidators => const {};
+
+  /// List of array-level validators.
+  @protected
+  List<NeatArrayValidator<K>> get arrayValidators => const [];
+
+  /// Current submission status.
+  NeatSubmissionStatus get submissionStatus => arrayState.status;
+
+  /// Total number of items in the array.
+  int get length => arrayState.length;
+
+  /// Whether the array contains no items.
+  bool get isEmpty => arrayState.isEmpty;
+
+  /// Whether the array contains at least one item.
+  bool get isNotEmpty => arrayState.isNotEmpty;
+
+  /// True if all items and array validators are valid.
+  bool get isValid => arrayState.isValid;
+
+  /// True if any field in any item has changed.
+  bool get isDirty => arrayState.isDirty;
+
+  /// Extracts all item values as `List<Map<K, Object?>>`.
+  List<Map<K, Object?>> get values => arrayState.values;
+
+  /// Index operator to access item form: `notifier[index]`.
+  NeatFormState<K> operator [](int index) => arrayState[index];
+
+  void _setArrayState(NeatFormArrayState<K> newArrayState) {
+    state = updateArrayForm(state, newArrayState);
+  }
+
+  /// Adds an item to the array.
+  void addItem([
+    Map<K, Object?> initialValues = const {},
+    Map<K, bool> optionalKeys = const {},
+    String? id,
+  ]) {
+    _setArrayState(
+      _NeatFormArrayEngine.addItem<K>(
+        state: arrayState,
+        initialValues: initialValues,
+        optionalKeys: optionalKeys,
+        id: id,
+      ),
+    );
+  }
+
+  /// Inserts an item at [index].
+  void insertItem(
+    int index, [
+    Map<K, Object?> initialValues = const {},
+    Map<K, bool> optionalKeys = const {},
+    String? id,
+  ]) {
+    _setArrayState(
+      _NeatFormArrayEngine.insertItem<K>(
+        state: arrayState,
+        index: index,
+        initialValues: initialValues,
+        optionalKeys: optionalKeys,
+        id: id,
+      ),
+    );
+  }
+
+  /// Removes an item at [index].
+  void removeItemAt(int index) {
+    _setArrayState(
+      _NeatFormArrayEngine.removeItemAt<K>(
+        state: arrayState,
+        index: index,
+      ),
+    );
+  }
+
+  /// Removes an item by [id].
+  void removeItemById(String id) {
+    _setArrayState(
+      _NeatFormArrayEngine.removeItemById<K>(
+        state: arrayState,
+        id: id,
+      ),
+    );
+  }
+
+  /// Moves an item from [fromIndex] to [toIndex].
+  void moveItem(int fromIndex, int toIndex) {
+    _setArrayState(
+      _NeatFormArrayEngine.moveItem<K>(
+        state: arrayState,
+        fromIndex: fromIndex,
+        toIndex: toIndex,
+      ),
+    );
+  }
+
+  /// Updates a field in the sub-form at [itemIndex].
+  void setArrayField<T>(
+    int itemIndex,
+    K key,
+    T value, {
+    bool touch = true,
+    bool clearError = true,
+  }) {
+    _setArrayState(
+      _NeatFormArrayEngine.setArrayField<T, K>(
+        state: arrayState,
+        itemIndex: itemIndex,
+        key: key,
+        value: value,
+        touch: touch,
+        clearError: clearError,
+      ),
+    );
+  }
+
+  /// Sets and validates a field in the sub-form at [itemIndex] immediately.
+  void setAndValidateArrayField<T>(
+    int itemIndex,
+    K key,
+    T value, {
+    NeatValidator<T>? validator,
+    bool touch = true,
+  }) {
+    _setArrayState(
+      _NeatFormArrayEngine.setAndValidateArrayField<T, K>(
+        state: arrayState,
+        itemValidators: itemValidators,
+        itemIndex: itemIndex,
+        key: key,
+        value: value,
+        validator: validator,
+        touch: touch,
+      ),
+    );
+  }
+
+  /// Validates all sub-forms and array-level validators.
+  bool validateArray() {
+    final (newState, isValid) = _NeatFormArrayEngine.validateArray<K>(
+      state: arrayState,
+      itemValidators: itemValidators,
+      arrayValidators: arrayValidators,
+    );
+    _setArrayState(newState);
+    return isValid;
+  }
+
+  /// Submits the form array if valid.
+  Future<bool> submitForm({
+    required Future<void> Function(List<Map<K, Object?>> values) onSubmit,
+    void Function(NeatValidationError? arrayError, List<Map<K, NeatValidationError>> itemErrors)? onError,
+  }) async {
+    final isValid = validateArray();
+    if (!isValid) {
+      _setArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      return false;
+    }
+
+    _setArrayState(arrayState.copyWith(status: NeatSubmissionStatus.submitting));
+
+    try {
+      await onSubmit(values);
+      _setArrayState(arrayState.copyWith(status: NeatSubmissionStatus.success));
+      return true;
+    } on Exception {
+      _setArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      rethrow;
+    } catch (_) {
+      _setArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      rethrow;
+    }
+  }
+
+  /// Resets the array to its initial state.
+  void resetArray() {
+    _setArrayState(_NeatFormArrayEngine.resetArray<K>(state: arrayState));
+  }
+}
+
+/// Mixin for **BLoC / Cubit** managing a nested form array inside a Screen State [S].
+mixin NeatNestedFormArrayCubitMixin<S, K> {
+  /// Current state of the Cubit.
+  S get state;
+
+  /// Emit function provided by Cubit.
+  void emit(S state);
+
+  /// Extracts the nested [NeatFormArrayState<K>] from the parent state [S].
+  NeatFormArrayState<K> getArrayForm(S state);
+
+  /// Returns a copy of [state] with the nested [arrayForm] updated.
+  S updateArrayForm(S state, NeatFormArrayState<K> arrayForm);
+
+  /// Current array form state.
+  NeatFormArrayState<K> get arrayState => getArrayForm(state);
+
+  /// Map of validators for each item's fields.
+  @protected
+  Map<K, NeatValidator<Object?>> get itemValidators => const {};
+
+  /// List of array-level validators.
+  @protected
+  List<NeatArrayValidator<K>> get arrayValidators => const [];
+
+  /// Current submission status.
+  NeatSubmissionStatus get submissionStatus => arrayState.status;
+
+  /// Total number of items in the array.
+  int get length => arrayState.length;
+
+  /// Whether the array contains no items.
+  bool get isEmpty => arrayState.isEmpty;
+
+  /// Whether the array contains at least one item.
+  bool get isNotEmpty => arrayState.isNotEmpty;
+
+  /// True if all items and array validators are valid.
+  bool get isValid => arrayState.isValid;
+
+  /// True if any field in any item has changed.
+  bool get isDirty => arrayState.isDirty;
+
+  /// Extracts all item values as `List<Map<K, Object?>>`.
+  List<Map<K, Object?>> get values => arrayState.values;
+
+  /// Index operator to access item form: `cubit[index]`.
+  NeatFormState<K> operator [](int index) => arrayState[index];
+
+  void _emitArrayState(NeatFormArrayState<K> newArrayState) {
+    emit(updateArrayForm(state, newArrayState));
+  }
+
+  /// Adds an item to the array.
+  void addItem([
+    Map<K, Object?> initialValues = const {},
+    Map<K, bool> optionalKeys = const {},
+    String? id,
+  ]) {
+    _emitArrayState(
+      _NeatFormArrayEngine.addItem<K>(
+        state: arrayState,
+        initialValues: initialValues,
+        optionalKeys: optionalKeys,
+        id: id,
+      ),
+    );
+  }
+
+  /// Inserts an item at [index].
+  void insertItem(
+    int index, [
+    Map<K, Object?> initialValues = const {},
+    Map<K, bool> optionalKeys = const {},
+    String? id,
+  ]) {
+    _emitArrayState(
+      _NeatFormArrayEngine.insertItem<K>(
+        state: arrayState,
+        index: index,
+        initialValues: initialValues,
+        optionalKeys: optionalKeys,
+        id: id,
+      ),
+    );
+  }
+
+  /// Removes an item at [index].
+  void removeItemAt(int index) {
+    _emitArrayState(
+      _NeatFormArrayEngine.removeItemAt<K>(
+        state: arrayState,
+        index: index,
+      ),
+    );
+  }
+
+  /// Removes an item by [id].
+  void removeItemById(String id) {
+    _emitArrayState(
+      _NeatFormArrayEngine.removeItemById<K>(
+        state: arrayState,
+        id: id,
+      ),
+    );
+  }
+
+  /// Moves an item from [fromIndex] to [toIndex].
+  void moveItem(int fromIndex, int toIndex) {
+    _emitArrayState(
+      _NeatFormArrayEngine.moveItem<K>(
+        state: arrayState,
+        fromIndex: fromIndex,
+        toIndex: toIndex,
+      ),
+    );
+  }
+
+  /// Updates a field in the sub-form at [itemIndex].
+  void setArrayField<T>(
+    int itemIndex,
+    K key,
+    T value, {
+    bool touch = true,
+    bool clearError = true,
+  }) {
+    _emitArrayState(
+      _NeatFormArrayEngine.setArrayField<T, K>(
+        state: arrayState,
+        itemIndex: itemIndex,
+        key: key,
+        value: value,
+        touch: touch,
+        clearError: clearError,
+      ),
+    );
+  }
+
+  /// Sets and validates a field in the sub-form at [itemIndex] immediately.
+  void setAndValidateArrayField<T>(
+    int itemIndex,
+    K key,
+    T value, {
+    NeatValidator<T>? validator,
+    bool touch = true,
+  }) {
+    _emitArrayState(
+      _NeatFormArrayEngine.setAndValidateArrayField<T, K>(
+        state: arrayState,
+        itemValidators: itemValidators,
+        itemIndex: itemIndex,
+        key: key,
+        value: value,
+        validator: validator,
+        touch: touch,
+      ),
+    );
+  }
+
+  /// Validates all sub-forms and array-level validators.
+  bool validateArray() {
+    final (newState, isValid) = _NeatFormArrayEngine.validateArray<K>(
+      state: arrayState,
+      itemValidators: itemValidators,
+      arrayValidators: arrayValidators,
+    );
+    _emitArrayState(newState);
+    return isValid;
+  }
+
+  /// Submits the form array if valid.
+  Future<bool> submitForm({
+    required Future<void> Function(List<Map<K, Object?>> values) onSubmit,
+    void Function(NeatValidationError? arrayError, List<Map<K, NeatValidationError>> itemErrors)? onError,
+  }) async {
+    final isValid = validateArray();
+    if (!isValid) {
+      _emitArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      return false;
+    }
+
+    _emitArrayState(arrayState.copyWith(status: NeatSubmissionStatus.submitting));
+
+    try {
+      await onSubmit(values);
+      _emitArrayState(arrayState.copyWith(status: NeatSubmissionStatus.success));
+      return true;
+    } on Exception {
+      _emitArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      rethrow;
+    } catch (_) {
+      _emitArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      rethrow;
+    }
+  }
+
+  /// Resets the array to its initial state.
+  void resetArray() {
+    _emitArrayState(_NeatFormArrayEngine.resetArray<K>(state: arrayState));
+  }
+}

@@ -606,6 +606,220 @@ void main() {
       expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
     });
   });
+
+  group('NeatNestedFormArrayNotifierMixin (Nested Screen State)', () {
+    test('operates all mutations on nested array form inside screen state', () async {
+      final notifier = _SampleNestedArrayNotifier();
+
+      expect(notifier.length, 1);
+      expect(notifier.isEmpty, isFalse);
+      expect(notifier.isNotEmpty, isTrue);
+      expect(notifier.isValid, isTrue);
+      expect(notifier.isDirty, isFalse);
+      expect(notifier.values.length, 1);
+      expect(notifier[0].valueOf<String>(PassengerKey.fullName), 'John Nested');
+
+      notifier.addItem({PassengerKey.fullName: 'Jane Nested'});
+      expect(notifier.length, 2);
+
+      notifier.insertItem(1, {PassengerKey.fullName: 'Mid Nested'});
+      expect(notifier.length, 3);
+
+      notifier.moveItem(0, 2);
+      notifier.removeItemAt(0);
+      expect(notifier.length, 2);
+
+      final idToRemove = notifier.state.passengers.items[0].id;
+      notifier.removeItemById(idToRemove);
+      expect(notifier.length, 1);
+
+      notifier.setArrayField(0, PassengerKey.fullName, 'Alex Nested');
+      expect(notifier.arrayState[0].valueOf<String>(PassengerKey.fullName), 'Alex Nested');
+      expect(notifier.isDirty, isTrue);
+
+      notifier.setAndValidateArrayField(0, PassengerKey.fullName, 'Alex Validated');
+      expect(notifier.arrayState[0].valueOf<String>(PassengerKey.fullName), 'Alex Validated');
+
+      final isValid = notifier.validateArray();
+      expect(isValid, isTrue);
+
+      var submitted = false;
+      final ok = await notifier.submitForm(
+        onSubmit: (v) async => submitted = true,
+      );
+      expect(ok, isTrue);
+      expect(submitted, isTrue);
+      expect(notifier.submissionStatus, NeatSubmissionStatus.success);
+
+      notifier.resetArray();
+      expect(notifier.submissionStatus, NeatSubmissionStatus.idle);
+      expect(notifier.isDirty, isFalse);
+    });
+
+    test('submitForm handles failure and exception in nested notifier', () async {
+      final notifier = _SampleNestedArrayNotifier();
+      notifier.addItem({PassengerKey.fullName: ''});
+
+      final ok = await notifier.submitForm(onSubmit: (v) async {});
+      expect(ok, isFalse);
+      expect(notifier.submissionStatus, NeatSubmissionStatus.failure);
+
+      notifier.setArrayField(1, PassengerKey.fullName, 'Fixed');
+      await expectLater(
+        () => notifier.submitForm(onSubmit: (v) async => throw Exception('nested err')),
+        throwsA(isA<Exception>()),
+      );
+      expect(notifier.submissionStatus, NeatSubmissionStatus.failure);
+    });
+  });
+
+  group('NeatNestedFormArrayCubitMixin (Nested Screen State)', () {
+    test('operates all mutations on nested array form in cubit', () async {
+      final cubit = _SampleNestedArrayCubit();
+
+      expect(cubit.length, 1);
+      expect(cubit.isEmpty, isFalse);
+      expect(cubit.isNotEmpty, isTrue);
+      expect(cubit.isValid, isTrue);
+      expect(cubit.isDirty, isFalse);
+      expect(cubit.values.length, 1);
+      expect(cubit[0].valueOf<String>(PassengerKey.fullName), 'Cubit John Nested');
+
+      cubit.addItem({PassengerKey.fullName: 'Cubit Jane Nested'});
+      expect(cubit.length, 2);
+
+      cubit.insertItem(1, {PassengerKey.fullName: 'Cubit Mid Nested'});
+      expect(cubit.length, 3);
+
+      cubit.moveItem(0, 2);
+      cubit.removeItemAt(0);
+      expect(cubit.length, 2);
+
+      final idToRemove = cubit.state.passengers.items[0].id;
+      cubit.removeItemById(idToRemove);
+      expect(cubit.length, 1);
+
+      cubit.setArrayField(0, PassengerKey.fullName, 'Cubit Alex Nested');
+      expect(cubit.arrayState[0].valueOf<String>(PassengerKey.fullName), 'Cubit Alex Nested');
+      expect(cubit.isDirty, isTrue);
+
+      cubit.setAndValidateArrayField(0, PassengerKey.fullName, 'Cubit Alex Validated');
+      expect(cubit.arrayState[0].valueOf<String>(PassengerKey.fullName), 'Cubit Alex Validated');
+
+      final isValid = cubit.validateArray();
+      expect(isValid, isTrue);
+
+      var submitted = false;
+      final ok = await cubit.submitForm(
+        onSubmit: (v) async => submitted = true,
+      );
+      expect(ok, isTrue);
+      expect(submitted, isTrue);
+      expect(cubit.submissionStatus, NeatSubmissionStatus.success);
+
+      cubit.resetArray();
+      expect(cubit.submissionStatus, NeatSubmissionStatus.idle);
+      expect(cubit.isDirty, isFalse);
+    });
+
+    test('submitForm handles failure and exception in nested cubit', () async {
+      final cubit = _SampleNestedArrayCubit();
+      cubit.addItem({PassengerKey.fullName: ''});
+
+      final ok = await cubit.submitForm(onSubmit: (v) async {});
+      expect(ok, isFalse);
+      expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
+
+      cubit.setArrayField(1, PassengerKey.fullName, 'Fixed');
+      await expectLater(
+        () => cubit.submitForm(onSubmit: (v) async => throw Exception('nested cubit err')),
+        throwsA(isA<Exception>()),
+      );
+      expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
+    });
+  });
+}
+
+class _SampleNestedScreenState {
+  _SampleNestedScreenState({
+    required this.passengers,
+    this.screenTitle = 'Booking',
+  });
+
+  final NeatFormArrayState<PassengerKey> passengers;
+  final String screenTitle;
+
+  _SampleNestedScreenState copyWith({
+    NeatFormArrayState<PassengerKey>? passengers,
+    String? screenTitle,
+  }) {
+    return _SampleNestedScreenState(
+      passengers: passengers ?? this.passengers,
+      screenTitle: screenTitle ?? this.screenTitle,
+    );
+  }
+}
+
+class _SampleNestedArrayNotifier
+    with NeatNestedFormArrayNotifierMixin<_SampleNestedScreenState, PassengerKey> {
+  _SampleNestedScreenState _state = _SampleNestedScreenState(
+    passengers: NeatFormArrayState<PassengerKey>.fromValuesList([
+      {PassengerKey.fullName: 'John Nested', PassengerKey.passportNumber: 'PASS_N1'},
+    ]),
+  );
+
+  @override
+  _SampleNestedScreenState get state => _state;
+
+  @override
+  set state(_SampleNestedScreenState value) => _state = value;
+
+  @override
+  NeatFormArrayState<PassengerKey> getArrayForm(_SampleNestedScreenState state) =>
+      state.passengers;
+
+  @override
+  _SampleNestedScreenState updateArrayForm(
+    _SampleNestedScreenState state,
+    NeatFormArrayState<PassengerKey> arrayForm,
+  ) =>
+      state.copyWith(passengers: arrayForm);
+
+  @override
+  Map<PassengerKey, NeatValidator<Object?>> get itemValidators => {
+        PassengerKey.fullName: NeatValidators.required(),
+      };
+}
+
+class _SampleNestedArrayCubit
+    with NeatNestedFormArrayCubitMixin<_SampleNestedScreenState, PassengerKey> {
+  _SampleNestedScreenState _state = _SampleNestedScreenState(
+    passengers: NeatFormArrayState<PassengerKey>.fromValuesList([
+      {PassengerKey.fullName: 'Cubit John Nested', PassengerKey.passportNumber: 'CUBIT_N1'},
+    ]),
+  );
+
+  @override
+  _SampleNestedScreenState get state => _state;
+
+  @override
+  void emit(_SampleNestedScreenState state) => _state = state;
+
+  @override
+  NeatFormArrayState<PassengerKey> getArrayForm(_SampleNestedScreenState state) =>
+      state.passengers;
+
+  @override
+  _SampleNestedScreenState updateArrayForm(
+    _SampleNestedScreenState state,
+    NeatFormArrayState<PassengerKey> arrayForm,
+  ) =>
+      state.copyWith(passengers: arrayForm);
+
+  @override
+  Map<PassengerKey, NeatValidator<Object?>> get itemValidators => {
+        PassengerKey.fullName: NeatValidators.required(),
+      };
 }
 
 class _SampleArrayNotifier with NeatFormArrayNotifierMixin<PassengerKey> {
