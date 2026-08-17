@@ -2,9 +2,9 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.7-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 205 Passed](https://img.shields.io/badge/tests-205%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 215 Passed](https://img.shields.io/badge/tests-215%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
@@ -29,8 +29,9 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 - [10. 🎨 Input Formatters & Masking (`NeatInputFormatters`)](#input-formatters)
 - [11. 📊 Event Tracking & Analytics (`NeatFormObserver`)](#form-observer)
 - [12. ⚡ Race-Condition-Free Async Validation](#async-validation)
-- [13. 📱 Showcase App](#showcase-app)
-- [14. 📝 License](#license)
+- [13. 🛠️ Flutter DevTools Extension](#devtools-extension)
+- [14. 📱 Showcase App](#showcase-app)
+- [15. 📝 License](#license)
 
 ---
 
@@ -474,8 +475,42 @@ await formController.validateFieldAsync(
 
 ---
 
+---
+
+<a id="devtools-extension"></a>
+## 13. 🛠️ Flutter DevTools Extension (NeatForm Tab)
+
+`neat_form` bundles an official **Flutter DevTools Extension**, automatically providing a dedicated **NeatForm** inspection and debugging tab inside Flutter DevTools when you run your application in debug mode.
+
+```
+┌──────────────────┬──────────────────────────────────────────┬─────────────────────────────┐
+│ 📋 Form Explorer │ 🔍 Field Inspector: LoginForm            │ ⚡ Telemetry & Actions       │
+├──────────────────┼──────────────────────────────────────────┼─────────────────────────────┤
+│ 🔍 [Search...]   │ 🏷️ Form ID: LoginForm_8f2a               │ 🚀 Quick Actions:           │
+│                  │ 📊 Status: idle | Valid: ✅ | Touched: 1  │ [⚡ Auto-fill Valid]        │
+│ 📁 Standard Forms│ ──────────────────────────────────────── │ [⚠️ Fill Boundary Data]     │
+│  ├── 🟢 LoginForm│ [Field Name]  [Value]    [Error] [State] │ [🔍 Validate Form Now]      │
+│  └── 🔴 Checkout │  email        dat@gm...  -       ✅ valid│ [🔄 Reset Form]             │
+│                  │  password     ••••••     -       ✅ valid│ [📥 Import JSON State]      │
+│ 📁 Dynamic Arrays│ ──────────────────────────────────────── │ [💾 Export JSON Snapshot]   │
+│  └── 🟡 Guests(3)│ ✏️ Live Value Override Dialog:           │ ─────────────────────────── │
+│                  │ [ Enter new value...        ] [Apply]    │ 🕒 Live Event Timeline:     │
+└──────────────────┴──────────────────────────────────────────┴─────────────────────────────┘
+```
+
+### ✨ Key Features:
+1. 📋 **Form Explorer:** Automatically detects all active `NeatFormController` and `NeatFormArrayController` instances in the running app (zero manual setup).
+2. 🔍 **Field Inspector & Live Value Mutator:** Inspect full state of each field (Value, Initial Value, Error Message, Error Code, Touched, Validating state). **Override and inject new values live** into the connected device to test reactive UI behavior.
+3. ⚡ **Smart Autofill & ⚠️ Boundary Test Generator:**
+   - **⚡ Fill Valid:** Auto-populates realistic valid data (Email, Password, Phone, Birthday...).
+   - **⚠️ Fill Boundary:** Injects edge-case and invalid values (Malformatted email, Short password, Negative numbers, Empty strings) with 1 click to test error displays.
+4. 📥 **Import & Restore JSON State:** Paste any JSON state snapshot to recreate specific bug reproduction states instantly.
+5. 🕒 **Live Event Stream Timeline:** Monitor real-time form lifecycle events (`neat_form:event`) with exact timestamps and formatted payload viewer.
+
+---
+
 <a id="showcase-app"></a>
-## 13. 📱 Showcase App
+## 14. 📱 Showcase App
 
 Explore the complete multi-tab showcase application in the [`example/`](example) directory:
 
@@ -487,6 +522,6 @@ flutter run -d chrome
 ---
 
 <a id="license"></a>
-## 14. 📝 License
+## 15. 📝 License
 
 Released under the **MIT License**. Free for personal and commercial projects.

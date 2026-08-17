@@ -2,9 +2,9 @@
 
 Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạnh mẽ, type-safe (100% `Object?`) dành cho **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.7-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 205 Passed](https://img.shields.io/badge/tests-205%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 215 Passed](https://img.shields.io/badge/tests-215%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](#tiếng-việt) | [English](README_EN.md)**
@@ -30,8 +30,9 @@ Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạ
 - [10. 🎨 Bộ định dạng đầu vào & Masking (`NeatInputFormatters`)](#input-formatters)
 - [11. 📊 Giám sát sự kiện & Analytics (`NeatFormObserver`)](#form-observer)
 - [12. ⚡ Kiểm tra bất đồng bộ chống Race-Condition (Async Validation)](#async-validation)
-- [13. 📱 Ứng dụng mẫu (Showcase App)](#showcase-app)
-- [14. 📝 Giấy phép (License)](#license)
+- [13. 🛠️ Flutter DevTools Extension](#devtools-extension)
+- [14. 📱 Ứng dụng mẫu (Showcase App)](#showcase-app)
+- [15. 📝 Giấy phép (License)](#license)
 
 ---
 
@@ -475,8 +476,42 @@ await formController.validateFieldAsync(
 
 ---
 
+---
+
+<a id="devtools-extension"></a>
+## 13. 🛠️ Flutter DevTools Extension (NeatForm Tab)
+
+`neat_form` tích hợp sẵn **Flutter DevTools Extension** chính thức, tự động kích hoạt một tab riêng biệt mang tên **NeatForm** bên trong Flutter DevTools khi bạn debug ứng dụng.
+
+```
+┌──────────────────┬──────────────────────────────────────────┬─────────────────────────────┐
+│ 📋 Form Explorer │ 🔍 Field Inspector: LoginForm            │ ⚡ Telemetry & Actions       │
+├──────────────────┼──────────────────────────────────────────┼─────────────────────────────┤
+│ 🔍 [Search...]   │ 🏷️ Form ID: LoginForm_8f2a               │ 🚀 Quick Actions:           │
+│                  │ 📊 Status: idle | Valid: ✅ | Touched: 1  │ [⚡ Auto-fill Valid]        │
+│ 📁 Standard Forms│ ──────────────────────────────────────── │ [⚠️ Fill Boundary Data]     │
+│  ├── 🟢 LoginForm│ [Field Name]  [Value]    [Error] [State] │ [🔍 Validate Form Now]      │
+│  └── 🔴 Checkout │  email        dat@gm...  -       ✅ valid│ [🔄 Reset Form]             │
+│                  │  password     ••••••     -       ✅ valid│ [📥 Import JSON State]      │
+│ 📁 Dynamic Arrays│ ──────────────────────────────────────── │ [💾 Export JSON Snapshot]   │
+│  └── 🟡 Guests(3)│ ✏️ Live Value Override Dialog:           │ ─────────────────────────── │
+│                  │ [ Nhập giá trị mới...       ] [Cập nhật] │ 🕒 Live Event Timeline:     │
+└──────────────────┴──────────────────────────────────────────┴─────────────────────────────┘
+```
+
+### ✨ Tính Năng Vượt Trội:
+1. 📋 **Form Explorer:** Tự động phát hiện và liệt kê tất cả instance `NeatFormController` & `NeatFormArrayController` đang hoạt động trong app (zero config).
+2. 🔍 **Field Inspector & Live Value Mutator:** Xem chi tiết từng trường (Key, Value, Initial Value, Error Message, Error Code, Touched, Validating state). Cho phép **sửa và inject giá trị mới trực tiếp vào thiết bị đang chạy** để test tính phản ứng.
+3. ⚡ **Smart Autofill & ⚠️ Boundary Test Generator:**
+   - **⚡ Fill Valid:** Tự động điền dữ liệu đúng chuẩn (Email, Password, SĐT, Ngày sinh...).
+   - **⚠️ Fill Boundary:** Tự động bơm các giá trị vi phạm biên/lỗi (Email sai định dạng, Password quá ngắn, Số âm, String rỗng) để kiểm thử UI báo lỗi chỉ với 1 click.
+4. 📥 **Import & Restore JSON State:** Dán bất kỳ snapshot JSON nào để tái hiện chính xác kịch bản lỗi (Bug Reproduction) từ log của người dùng.
+5. 🕒 **Live Event Stream Timeline:** Theo dõi dòng sự kiện thời gian thực (`neat_form:event`) kèm mốc thời gian và chi tiết payload.
+
+---
+
 <a id="showcase-app"></a>
-## 13. 📱 Ứng dụng mẫu (Showcase App)
+## 14. 📱 Ứng dụng mẫu (Showcase App)
 
 Xem mã nguồn hoàn chỉnh với đầy đủ các tab showcase trong thư mục [`example/`](example):
 
@@ -488,6 +523,6 @@ flutter run -d chrome
 ---
 
 <a id="license"></a>
-## 14. 📝 Giấy phép (License)
+## 15. 📝 Giấy phép (License)
 
 Dự án được phát hành theo giấy phép **MIT License**. Bạn toàn quyền sử dụng, tùy biến và tích hợp vào các dự án thương mại hoàn toàn miễn phí.

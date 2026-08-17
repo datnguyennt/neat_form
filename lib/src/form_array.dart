@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:neat_form/src/devtools/neat_form_devtools_bridge.dart';
+import 'package:neat_form/src/devtools/neat_form_registry.dart';
 import 'package:neat_form/src/field_state.dart';
 import 'package:neat_form/src/validators.dart';
 
@@ -654,13 +656,37 @@ class NeatFormArrayController<K> extends ChangeNotifier {
     Map<K, bool> optionalKeys = const {},
     this.itemValidators = const {},
     this.arrayValidators = const [],
-  }) : _state = NeatFormArrayState<K>.fromValuesList(
+    String? debugName,
+    bool enableDevTools = true,
+  })  : _state = NeatFormArrayState<K>.fromValuesList(
           initialItems,
           optionalKeys: optionalKeys,
-        );
+        ),
+        _debugName = debugName {
+    if (enableDevTools && !kReleaseMode) {
+      NeatFormDevToolsBridge.init();
+      _devToolsFormId = NeatFormDevToolsRegistry.instance.registerArrayController(
+        this,
+        debugName: debugName,
+      );
+      NeatFormDevToolsBridge.postEvent('form_registered', {
+        'formId': _devToolsFormId,
+        'name': _debugName ?? 'FormArray ($K)',
+        'type': 'array',
+      });
+    }
+  }
 
   NeatFormArrayState<K> _state;
+  final String? _debugName;
+  String? _devToolsFormId;
   bool _isDisposed = false;
+
+  /// Unique ID assigned by DevTools registry, if registered.
+  String? get devToolsFormId => _devToolsFormId;
+
+  /// Optional debug name for this form array.
+  String? get debugName => _debugName;
 
   /// The map of validators applied to each item's fields.
   final Map<K, NeatValidator<Object?>> itemValidators;
@@ -676,6 +702,12 @@ class NeatFormArrayController<K> extends ChangeNotifier {
 
   /// Total number of items in the array.
   int get length => _state.length;
+
+  /// Whether the array contains no items.
+  bool get isEmpty => _state.isEmpty;
+
+  /// Whether the array contains at least one item.
+  bool get isNotEmpty => _state.isNotEmpty;
 
   /// Current submission lifecycle status.
   NeatSubmissionStatus get submissionStatus => _state.status;
@@ -698,6 +730,15 @@ class NeatFormArrayController<K> extends ChangeNotifier {
   void _setState(NeatFormArrayState<K> newState) {
     if (_isDisposed || _state == newState) return;
     _state = newState;
+    if (_devToolsFormId != null) {
+      NeatFormDevToolsBridge.postEvent('form_array_updated', {
+        'formId': _devToolsFormId,
+        'length': _state.length,
+        'isValid': _state.isValid,
+        'isTouched': _state.isTouched,
+        'status': _state.status.name,
+      });
+    }
     notifyListeners();
   }
 
@@ -981,6 +1022,13 @@ class NeatFormArrayController<K> extends ChangeNotifier {
   @override
   void dispose() {
     _isDisposed = true;
+    if (_devToolsFormId != null) {
+      NeatFormDevToolsRegistry.instance.unregister(_devToolsFormId);
+      NeatFormDevToolsBridge.postEvent('form_unregistered', {
+        'formId': _devToolsFormId,
+      });
+      _devToolsFormId = null;
+    }
     super.dispose();
   }
 }

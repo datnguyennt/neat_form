@@ -1,0 +1,22 @@
+name: neat_form_devtools_extension
+description: A Flutter DevTools Extension for inspecting, modifying, and testing NeatForm states in real-time.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  devtools_app_shared: '>=0.3.0 <1.0.0'
+  devtools_extensions: '>=0.3.0 <1.0.0'
+
+dev_dependencies:
+  flutter_lints: ^3.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

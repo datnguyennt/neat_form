@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:neat_form/src/devtools/neat_form_devtools_bridge.dart';
+import 'package:neat_form/src/devtools/neat_form_registry.dart';
 import 'package:neat_form/src/field_state.dart';
 import 'package:neat_form/src/validators.dart';
 
@@ -376,6 +378,9 @@ mixin NeatFormMixin<K> {
 
   /// Concise alias for [getField].
   NeatFieldState<T> field<T>(K key) => getField<T>(key);
+
+  /// Retrieves the raw value of a field by its [key].
+  T? valueOf<T>(K key) => getField<T>(key).value;
 
   /// Updates a field's value, optionally clears error, and flags touch.
   void setField<T>(
@@ -1255,9 +1260,25 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
     required Map<K, NeatFieldState<Object?>> initialFields,
     Map<K, NeatValidator<Object?>> validators = const {},
     NeatFormObserver<K>? observer,
+    String? debugName,
+    bool enableDevTools = true,
   })  : _fields = Map<K, NeatFieldState<Object?>>.from(initialFields),
         _validators = Map<K, NeatValidator<Object?>>.from(validators),
-        _observer = observer;
+        _observer = observer,
+        _debugName = debugName {
+    if (enableDevTools && !kReleaseMode) {
+      NeatFormDevToolsBridge.init();
+      _devToolsFormId = NeatFormDevToolsRegistry.instance.registerController(
+        this,
+        debugName: debugName,
+      );
+      NeatFormDevToolsBridge.postEvent('form_registered', {
+        'formId': _devToolsFormId,
+        'name': _debugName ?? 'Form ($K)',
+        'type': 'form',
+      });
+    }
+  }
 
   /// Creates a form controller from a simple map of initial values.
   factory NeatFormController.fromValues({
@@ -1265,6 +1286,8 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
     Map<K, bool> optionalKeys = const {},
     Map<K, NeatValidator<Object?>> validators = const {},
     NeatFormObserver<K>? observer,
+    String? debugName,
+    bool enableDevTools = true,
   }) {
     final formState = NeatFormState<K>.fromValues(
       initialValues,
@@ -1274,13 +1297,23 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
       initialFields: formState.fields,
       validators: validators,
       observer: observer,
+      debugName: debugName,
+      enableDevTools: enableDevTools,
     );
   }
 
   Map<K, NeatFieldState<Object?>> _fields;
   final Map<K, NeatValidator<Object?>> _validators;
   final NeatFormObserver<K>? _observer;
+  final String? _debugName;
+  String? _devToolsFormId;
   bool _isDisposed = false;
+
+  /// Unique ID assigned by DevTools registry, if registered.
+  String? get devToolsFormId => _devToolsFormId;
+
+  /// Optional debug name for this form.
+  String? get debugName => _debugName;
 
   @override
   Map<K, NeatFieldState<Object?>> get fields => Map.unmodifiable(_fields);
@@ -1307,6 +1340,14 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
   void updateStateWithFields(Map<K, NeatFieldState<Object?>> newFields) {
     if (_isDisposed) return;
     _fields = newFields;
+    if (_devToolsFormId != null) {
+      NeatFormDevToolsBridge.postEvent('form_updated', {
+        'formId': _devToolsFormId,
+        'isValid': isValid,
+        'isTouched': state.isTouched,
+        'fieldsCount': _fields.length,
+      });
+    }
     notifyListeners();
   }
 
@@ -1314,12 +1355,25 @@ class NeatFormController<K> extends ChangeNotifier with NeatFormMixin<K> {
   void updateSubmissionStatus(NeatSubmissionStatus status) {
     if (_isDisposed) return;
     super.updateSubmissionStatus(status);
+    if (_devToolsFormId != null) {
+      NeatFormDevToolsBridge.postEvent('submission_status_changed', {
+        'formId': _devToolsFormId,
+        'status': status.name,
+      });
+    }
     notifyListeners();
   }
 
   @override
   void dispose() {
     _isDisposed = true;
+    if (_devToolsFormId != null) {
+      NeatFormDevToolsRegistry.instance.unregister(_devToolsFormId);
+      NeatFormDevToolsBridge.postEvent('form_unregistered', {
+        'formId': _devToolsFormId,
+      });
+      _devToolsFormId = null;
+    }
     super.dispose();
   }
 }

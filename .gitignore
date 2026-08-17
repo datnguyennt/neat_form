@@ -2,6 +2,7 @@
 .dart_tool/
 .packages
 build/
+!extension/devtools/build/
 pubspec.lock
 
 # macOS

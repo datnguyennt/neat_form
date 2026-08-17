@@ -1,3 +1,17 @@
+# 1.3.0
+
+- **Official Flutter DevTools Extension (`NeatForm` Tab):**
+  - Bundled Flutter DevTools Extension package automatically served inside Flutter DevTools when running debug apps.
+  - **Form Explorer (Left Panel):** Real-time discovery and searchable hierarchy for active `NeatFormController` & `NeatFormArrayController` instances with status indicators (Valid, Error, Touched, Submitting).
+  - **Field Inspector & Live Value Mutator (Center Panel):** Deep inspection for each field state (value, initial value, validation errors, error codes, touch status) with ability to override and inject values live into the running app.
+  - **Dynamic Form Array Multi-Level Inspector:** Expandable array item tree and sub-form field mutation.
+  - **Smart Autofill & Boundary Test Generator:** 1-click generation of valid test values (`mode: 'valid'`) or edge-case / invalid boundary inputs (`mode: 'boundary'`) for rapid UI validation testing.
+  - **JSON State Import & Bug Reproduction:** 1-click modal to paste JSON state snapshots and bulk-update form conditions live.
+  - **Live Event Stream Timeline (Right Panel):** Real-time telemetry feed recording all form events (`neat_form:event`) with exact timestamps and formatted payload inspection.
+  - **Host Bridge & VM Service Extensions:** Registered 7 VM Service extensions (`getForms`, `getFormDetails`, `setFieldValue`, `validateForm`, `resetForm`, `autofillMock`, `importState`) using `WeakReference` memory management (zero leaks, tree-shaken in release mode).
+  - Added `valueOf<T>(key)` helper on `NeatFormController` and `isEmpty`/`isNotEmpty` getters on `NeatFormArrayController`.
+  - Expanded unit test suite to **215 tests** with **98.68% overall code coverage** and **0 static analysis warnings**.
+
 # 1.2.7
 
 - **NeatForm UI Builders Suite (Scoped & Fine-Grained Reactivity):**
