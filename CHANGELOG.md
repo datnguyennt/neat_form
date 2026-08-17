@@ -1,3 +1,15 @@
+# 1.2.4
+
+- **Dynamic Form Array Edge-Case Hardening & Async Validation:**
+  - Added auto-template population on `addItem` & `insertItem` from `itemValidators.keys` to prevent `ArgumentError` when mutating uninitialized fields.
+  - Added union key validation in `validateArray` so sub-forms missing initial keys are properly validated against `itemValidators`.
+  - Added `validateArrayFieldAsync<T>` supporting sub-form async validation with per-item sequence tokens to eliminate race conditions.
+  - Added `removeWhere`, `clearItems`, `setItems`, and `reorderItem` (compatible with `ReorderableListView`) across `NeatFormArrayController` and all 4 Notifier/Cubit mixins.
+  - Added `onError` callback in `submitForm` returning both array-level error and structured per-item errors (`List<Map<K, NeatValidationError>>`).
+  - Enhanced `NeatArrayValidators.uniqueBy` with `caseSensitive: false`, `trim: true`, and `ignoreEmpty: true`.
+  - Added `isTouched` getters on both `NeatFormState` and `NeatFormArrayState`.
+  - Expanded test suite to **166 tests** with **98.85% code coverage**.
+
 # 1.2.3
 
 - **Dynamic Form Array Suite (`NeatFormArray`):**
