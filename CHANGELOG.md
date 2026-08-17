@@ -1,3 +1,15 @@
+# 1.2.5
+
+- **Comprehensive Validator Suite Expansion & Edge Case Hardening:**
+  - Added `NeatValidators.dateString` supporting strict calendar checks (valid month 1-12, days 1-31, leap years, days per month) with `minAge`, `maxAge`, `minYear`, `maxYear`, `mustBePast`, and `mustBeFuture` options.
+  - Upgraded core numeric validators (`minValue`, `maxValue`, `positive`, `negative`, `multipleOf`) to support auto-coercion of numeric string inputs from text fields.
+  - Added new numeric range & type validators: `valueRange` (between), `nonNegative` (>= 0), `nonPositive` (<= 0), and `integerOnly`.
+  - Added `timeString` validator for standard 24-hour time strings (`HH:mm` or `HH:mm:ss`).
+  - Added choice / collection validators: `oneOf` and `noneOf`.
+  - Added format & network validators: `creditCardExpiry` (MM/YY or MM/YYYY), `ipv4`, `ipv6`, `ipAddress`, `uuid`, `hexColor`, and `jsonString`.
+  - Updated showcase checkout example with real-time date of birth calendar validation.
+  - Expanded unit test suite to **182 tests** achieving **98.72% code coverage** with 0 lints.
+
 # 1.2.4
 
 - **Dynamic Form Array Edge-Case Hardening & Async Validation:**
