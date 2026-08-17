@@ -565,6 +565,40 @@ TextField(
 
 Easily manage dynamic lists of sub-forms (flight passengers, multiple shipping addresses, invoice line items) with **Stable Unique IDs** to eliminate Flutter widget focus hopping during deletions:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/form_array_en.svg" alt="Dynamic Form Array Architecture Diagram" width="100%" />
+</p>
+
+<details>
+<summary>👁️ View Mermaid Source Diagram</summary>
+
+```mermaid
+flowchart TD
+    subgraph ArrayState["📦 NeatFormArrayState<K> (Array State Container)"]
+        direction TB
+        Meta["• length, isEmpty, isNotEmpty<br/>• isValid, isDirty, isErrorVisible<br/>• Array-Level Rules: minItems, maxItems, uniqueBy"]
+        
+        subgraph Items["List<NeatFormArrayItem<K>>"]
+            Item1["Item #1 (id: 'item_1') ➔ Key: ValueKey('item_1')<br/>NeatFormState<K> { name, passport, seat }"]
+            Item2["Item #2 (id: 'item_2') ➔ Key: ValueKey('item_2')<br/>NeatFormState<K> { name, passport, seat }"]
+            ItemN["Item #N (id: 'item_N') ➔ Key: ValueKey('item_N')<br/>NeatFormState<K> { name, passport, seat }"]
+        end
+    end
+
+    subgraph Operations["⚡ Immutable CRUD Operations"]
+        direction LR
+        Op1["addItem(initialValues)"]
+        Op2["insertItem(index, initialValues)"]
+        Op3["removeItemAt(index) / removeItemById(id)"]
+        Op4["moveItem(from, to)"]
+        Op5["setArrayField(index, key, val)"]
+        Op6["validateArray() & submitForm()"]
+    end
+
+    Operations -->|"Produces New Immutable State (Zero Focus Jump)"| ArrayState
+```
+</details>
+
 ```dart
 // 1. Declare item enum fields
 enum PassengerField { fullName, passportNumber, seatType }

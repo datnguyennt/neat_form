@@ -566,6 +566,40 @@ TextField(
 
 Quản lý danh sách các sub-form thêm / bớt / sắp xếp động (như danh sách hành khách đặt vé máy bay, nhiều địa chỉ nhận hàng, dòng sản phẩm trong hóa đơn) với **Stable Unique ID** chống nhảy focus khi xóa item:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/form_array_vi.svg" alt="Sơ đồ Kiến trúc Dynamic Form Array" width="100%" />
+</p>
+
+<details>
+<summary>👁️ Xem mã nguồn Mermaid Diagram</summary>
+
+```mermaid
+flowchart TD
+    subgraph ArrayState["📦 NeatFormArrayState<K> (Trạng thái Danh sách)"]
+        direction TB
+        Meta["• length, isEmpty, isNotEmpty<br/>• isValid, isDirty, isErrorVisible<br/>• Array-Level Rules: minItems, maxItems, uniqueBy"]
+        
+        subgraph Items["List<NeatFormArrayItem<K>>"]
+            Item1["Item #1 (id: 'item_1') ➔ Key: ValueKey('item_1')<br/>NeatFormState<K> { name, passport, seat }"]
+            Item2["Item #2 (id: 'item_2') ➔ Key: ValueKey('item_2')<br/>NeatFormState<K> { name, passport, seat }"]
+            ItemN["Item #N (id: 'item_N') ➔ Key: ValueKey('item_N')<br/>NeatFormState<K> { name, passport, seat }"]
+        end
+    end
+
+    subgraph Operations["⚡ Các hàm thao tác (Immutable CRUD Operations)"]
+        direction LR
+        Op1["addItem(initialValues)"]
+        Op2["insertItem(index, initialValues)"]
+        Op3["removeItemAt(index) / removeItemById(id)"]
+        Op4["moveItem(from, to)"]
+        Op5["setArrayField(index, key, val)"]
+        Op6["validateArray() & submitForm()"]
+    end
+
+    Operations -->|"Tạo ra State Bất biến mới (Zero Focus Bug)"| ArrayState
+```
+</details>
+
 ```dart
 // 1. Khai báo Enum trường của từng item
 enum PassengerField { fullName, passportNumber, seatType }

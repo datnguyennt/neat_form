@@ -172,7 +172,56 @@ diagrams = {
 
     API-->>Engine: Response for token = 1 (Username taken)
     Engine->>Engine: Match token: 1 != 2 (Stale Token ❌)
-    Note over Engine,Field: Outdated response safely discarded! UI is never overwritten."""
+    Note over Engine,Field: Outdated response safely discarded! UI is never overwritten.""",
+
+    # 5. Dynamic Form Array Architecture
+    "form_array_vi": """flowchart TD
+    subgraph ArrayState["📦 NeatFormArrayState&lt;K&gt; (Trạng thái Danh sách)"]
+        direction TB
+        Meta["• length, isEmpty, isNotEmpty<br/>• isValid, isDirty, isErrorVisible<br/>• Array-Level Rules: minItems, maxItems, uniqueBy"]
+        
+        subgraph Items["List&lt;NeatFormArrayItem&lt;K&gt;&gt;"]
+            Item1["Item #1 (id: 'item_1') ➔ Key: ValueKey('item_1')<br/>NeatFormState&lt;K&gt; { name, passport, seat }"]
+            Item2["Item #2 (id: 'item_2') ➔ Key: ValueKey('item_2')<br/>NeatFormState&lt;K&gt; { name, passport, seat }"]
+            ItemN["Item #N (id: 'item_N') ➔ Key: ValueKey('item_N')<br/>NeatFormState&lt;K&gt; { name, passport, seat }"]
+        end
+    end
+
+    subgraph Operations["⚡ Các hàm thao tác (Immutable CRUD Operations)"]
+        direction LR
+        Op1["addItem(initialValues)"]
+        Op2["insertItem(index, initialValues)"]
+        Op3["removeItemAt(index) / removeItemById(id)"]
+        Op4["moveItem(from, to)"]
+        Op5["setArrayField(index, key, val)"]
+        Op6["validateArray() &amp; submitForm()"]
+    end
+
+    Operations -->|"Tạo ra State Bất biến mới (Zero Focus Bug)"| ArrayState""",
+
+    "form_array_en": """flowchart TD
+    subgraph ArrayState["📦 NeatFormArrayState&lt;K&gt; (Array State Container)"]
+        direction TB
+        Meta["• length, isEmpty, isNotEmpty<br/>• isValid, isDirty, isErrorVisible<br/>• Array-Level Rules: minItems, maxItems, uniqueBy"]
+        
+        subgraph Items["List&lt;NeatFormArrayItem&lt;K&gt;&gt;"]
+            Item1["Item #1 (id: 'item_1') ➔ Key: ValueKey('item_1')<br/>NeatFormState&lt;K&gt; { name, passport, seat }"]
+            Item2["Item #2 (id: 'item_2') ➔ Key: ValueKey('item_2')<br/>NeatFormState&lt;K&gt; { name, passport, seat }"]
+            ItemN["Item #N (id: 'item_N') ➔ Key: ValueKey('item_N')<br/>NeatFormState&lt;K&gt; { name, passport, seat }"]
+        end
+    end
+
+    subgraph Operations["⚡ Immutable CRUD Operations"]
+        direction LR
+        Op1["addItem(initialValues)"]
+        Op2["insertItem(index, initialValues)"]
+        Op3["removeItemAt(index) / removeItemById(id)"]
+        Op4["moveItem(from, to)"]
+        Op5["setArrayField(index, key, val)"]
+        Op6["validateArray() &amp; submitForm()"]
+    end
+
+    Operations -->|"Produces New Immutable State (Zero Focus Jump)"| ArrayState"""
 }
 
 os.makedirs("doc/diagrams", exist_ok=True)

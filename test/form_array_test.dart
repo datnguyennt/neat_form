@@ -344,11 +344,12 @@ void main() {
       );
       expect(controller[0].field(PassengerKey.passportNumber).error, isNotNull);
 
-      // Valid update
+      // Valid update with touch: false
       controller.setAndValidateArrayField(
         0,
         PassengerKey.passportNumber,
         'ABCD',
+        touch: false,
       );
       expect(controller[0].field(PassengerKey.passportNumber).error, isNull);
 
@@ -445,6 +446,17 @@ void main() {
         throwsA(isA<Exception>()),
       );
       expect(controller.submissionStatus, NeatSubmissionStatus.failure);
+
+      // 4. Non-Exception error in onSubmit (catch (_))
+      await expectLater(
+        () => controller.submitForm(
+          onSubmit: (values) async {
+            throw StateError('raw state error');
+          },
+        ),
+        throwsA(isA<StateError>()),
+      );
+      expect(controller.submissionStatus, NeatSubmissionStatus.failure);
     });
 
     test('resetArray, clearErrors, and dispose', () {
@@ -536,6 +548,12 @@ void main() {
         throwsA(isA<Exception>()),
       );
       expect(notifier.submissionStatus, NeatSubmissionStatus.failure);
+
+      await expectLater(
+        () => notifier.submitForm(onSubmit: (v) async => throw StateError('err')),
+        throwsA(isA<StateError>()),
+      );
+      expect(notifier.submissionStatus, NeatSubmissionStatus.failure);
     });
   });
 
@@ -604,6 +622,12 @@ void main() {
         throwsA(isA<Exception>()),
       );
       expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
+
+      await expectLater(
+        () => cubit.submitForm(onSubmit: (v) async => throw StateError('err')),
+        throwsA(isA<StateError>()),
+      );
+      expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
     });
   });
 
@@ -670,6 +694,12 @@ void main() {
         throwsA(isA<Exception>()),
       );
       expect(notifier.submissionStatus, NeatSubmissionStatus.failure);
+
+      await expectLater(
+        () => notifier.submitForm(onSubmit: (v) async => throw StateError('nested err')),
+        throwsA(isA<StateError>()),
+      );
+      expect(notifier.submissionStatus, NeatSubmissionStatus.failure);
     });
   });
 
@@ -734,6 +764,12 @@ void main() {
       await expectLater(
         () => cubit.submitForm(onSubmit: (v) async => throw Exception('nested cubit err')),
         throwsA(isA<Exception>()),
+      );
+      expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
+
+      await expectLater(
+        () => cubit.submitForm(onSubmit: (v) async => throw StateError('nested cubit err')),
+        throwsA(isA<StateError>()),
       );
       expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
     });
