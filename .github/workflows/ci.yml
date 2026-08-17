@@ -1,0 +1,38 @@
+name: CI (Test & Analyze)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests & Lints
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 💙 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      - name: 🔍 Static Analysis
+        run: dart analyze
+
+      - name: 🧪 Unit & Widget Tests
+        run: flutter test --coverage
+
+      - name: 🛠️ Test DevTools Extension Sub-package
+        run: |
+          cd packages/neat_form_devtools_extension
+          flutter pub get
+          dart analyze
+          flutter test
