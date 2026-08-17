@@ -130,7 +130,7 @@ Add `neat_form` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.1
+  neat_form: ^1.2.6
 ```
 
 Or run:

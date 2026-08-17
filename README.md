@@ -131,7 +131,7 @@ Thêm `neat_form` vào file `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.1.1
+  neat_form: ^1.2.6
 ```
 
 Hoặc chạy lệnh:
