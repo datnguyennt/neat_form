@@ -120,6 +120,9 @@ class NeatFormArrayState<K> {
   /// Returns `true` if any sub-form in the array has been modified from its initial value.
   bool get isDirty => items.any((item) => item.form.isDirty);
 
+  /// Returns `true` if any field in any sub-form in the array has been touched/interacted with.
+  bool get isTouched => items.any((item) => item.form.isTouched);
+
   /// True if any item in the array is currently undergoing async validation.
   bool get isValidating => items.any((item) => item.form.isValidating);
 
@@ -179,10 +182,10 @@ class NeatFormArrayState<K> {
       identical(this, other) ||
       other is NeatFormArrayState<K> &&
           runtimeType == other.runtimeType &&
-          status == other.status &&
           error == other.error &&
           showError == other.showError &&
-          _itemsEqual(items, other.items);
+          status == other.status &&
+          listEquals(items, other.items);
 
   @override
   int get hashCode => Object.hash(
@@ -192,46 +195,33 @@ class NeatFormArrayState<K> {
         status,
       );
 
-  static bool _itemsEqual<K>(
-    List<NeatFormArrayItem<K>> a,
-    List<NeatFormArrayItem<K>> b,
-  ) {
-    if (identical(a, b)) return true;
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
   @override
   String toString() =>
-      'NeatFormArrayState(items: ${items.length}, isValid: $isValid, isDirty: $isDirty, status: $status, error: $error)';
+      'NeatFormArrayState(items: ${items.length}, error: $error, status: $status)';
 }
 
 const Object _arraySentinel = Object();
 
-/// Type signature for array-level validator functions.
+/// A signature for an array-level validation function.
 typedef NeatArrayValidator<K> = NeatValidationError? Function(
-  NeatFormArrayState<K> arrayState,
+  NeatFormArrayState<K> state,
 );
 
-/// Built-in array-level validator functions for [NeatFormArrayState].
+/// A collection of built-in array-level validators.
 class NeatArrayValidators {
-  /// Error code for minimum items validation.
+  NeatArrayValidators._();
+
+  /// Error code for min items violation.
   static const String codeMinItems = 'array_min_items';
 
-  /// Error code for maximum items validation.
+  /// Error code for max items violation.
   static const String codeMaxItems = 'array_max_items';
 
-  /// Error code for array length range validation.
+  /// Error code for length range violation.
   static const String codeLengthRange = 'array_length_range';
 
-  /// Error code for duplicate / unique items validation.
+  /// Error code for duplicate value violation.
   static const String codeUniqueBy = 'array_unique_by';
-
-  /// Error code for custom array validation.
-  static const String codeCustomArray = 'array_custom';
 
   /// Validates that the array contains at least [min] items.
   static NeatArrayValidator<K> minItems<K>(
@@ -290,10 +280,11 @@ class NeatArrayValidators {
 
   /// Validates that all items in the array have unique values based on [selector].
   ///
-  /// Perfect for checking that passport numbers, email addresses, or product SKUs are not duplicated:
+  /// Supports trimming whitespace and case-insensitive comparison for emails/passports:
   /// ```dart
   /// NeatArrayValidators.uniqueBy<PassengerKey, String>(
   ///   (form) => form.valueOf<String>(PassengerKey.passportNumber),
+  ///   caseSensitive: false,
   ///   message: 'Số hộ chiếu không được trùng nhau',
   /// )
   /// ```
@@ -302,17 +293,30 @@ class NeatArrayValidators {
     String code = codeUniqueBy,
     String? message,
     bool ignoreEmpty = true,
+    bool caseSensitive = true,
+    bool trim = true,
   }) {
     return (NeatFormArrayState<K> state) {
-      final seen = <V>{};
+      final seen = <Object>{};
       for (final item in state.items) {
-        final val = selector(item.form);
-        if (val == null) continue;
-        if (ignoreEmpty && val is String && val.trim().isEmpty) continue;
+        final rawVal = selector(item.form);
+        if (rawVal == null) continue;
+
+        Object val = rawVal;
+        if (val is String) {
+          if (trim) {
+            val = val.trim();
+          }
+          if (ignoreEmpty && val.isEmpty) continue;
+          if (!caseSensitive) {
+            val = val.toLowerCase();
+          }
+        }
+
         if (seen.contains(val)) {
           return NeatValidationError(
             code,
-            params: {'duplicateValue': val},
+            params: {'duplicateValue': rawVal},
             message: message,
           );
         }
@@ -345,12 +349,19 @@ class _NeatFormArrayEngine {
     required NeatFormArrayState<K> state,
     Map<K, Object?> initialValues = const {},
     Map<K, bool> optionalKeys = const {},
+    Iterable<K>? templateKeys,
     String? id,
   }) {
+    final values = Map<K, Object?>.from(initialValues);
+    if (templateKeys != null) {
+      for (final k in templateKeys) {
+        values.putIfAbsent(k, () => null);
+      }
+    }
     final newItem = NeatFormArrayItem<K>(
       id: id,
       form: NeatFormState<K>.fromValues(
-        initialValues,
+        values,
         optionalKeys: optionalKeys,
       ),
     );
@@ -363,15 +374,22 @@ class _NeatFormArrayEngine {
     required int index,
     Map<K, Object?> initialValues = const {},
     Map<K, bool> optionalKeys = const {},
+    Iterable<K>? templateKeys,
     String? id,
   }) {
     if (index < 0 || index > state.length) {
       throw RangeError.range(index, 0, state.length, 'index');
     }
+    final values = Map<K, Object?>.from(initialValues);
+    if (templateKeys != null) {
+      for (final k in templateKeys) {
+        values.putIfAbsent(k, () => null);
+      }
+    }
     final newItem = NeatFormArrayItem<K>(
       id: id,
       form: NeatFormState<K>.fromValues(
-        initialValues,
+        values,
         optionalKeys: optionalKeys,
       ),
     );
@@ -397,6 +415,43 @@ class _NeatFormArrayEngine {
     required String id,
   }) {
     final newItems = state.items.where((i) => i.id != id).toList();
+    return state.copyWith(items: newItems);
+  }
+
+  static NeatFormArrayState<K> removeWhere<K>({
+    required NeatFormArrayState<K> state,
+    required bool Function(NeatFormArrayItem<K> item) test,
+  }) {
+    final newItems = state.items.where((i) => !test(i)).toList();
+    return state.copyWith(items: newItems);
+  }
+
+  static NeatFormArrayState<K> clearItems<K>({
+    required NeatFormArrayState<K> state,
+  }) {
+    return state.copyWith(items: const []);
+  }
+
+  static NeatFormArrayState<K> setItems<K>({
+    required NeatFormArrayState<K> state,
+    required List<Map<K, Object?>> valuesList,
+    Map<K, bool> optionalKeys = const {},
+    Iterable<K>? templateKeys,
+  }) {
+    final newItems = valuesList.map((valMap) {
+      final values = Map<K, Object?>.from(valMap);
+      if (templateKeys != null) {
+        for (final k in templateKeys) {
+          values.putIfAbsent(k, () => null);
+        }
+      }
+      return NeatFormArrayItem<K>(
+        form: NeatFormState<K>.fromValues(
+          values,
+          optionalKeys: optionalKeys,
+        ),
+      );
+    }).toList();
     return state.copyWith(items: newItems);
   }
 
@@ -434,10 +489,8 @@ class _NeatFormArrayEngine {
     }
     final currentItem = state.items[itemIndex];
     final currentForm = currentItem.form;
-    final currentField = currentForm.fields[key];
-    if (currentField == null) {
-      throw ArgumentError('Field "$key" not found in sub-form state');
-    }
+    final currentField = currentForm.fields[key] ??
+        NeatFieldState<Object?>(value: value, initialValue: value);
 
     final newField = currentField.copyWith(
       value: value,
@@ -472,10 +525,8 @@ class _NeatFormArrayEngine {
     }
     final currentItem = state.items[itemIndex];
     final currentForm = currentItem.form;
-    final currentField = currentForm.fields[key];
-    if (currentField == null) {
-      throw ArgumentError('Field "$key" not found in sub-form state');
-    }
+    final currentField = currentForm.fields[key] ??
+        NeatFieldState<Object?>(value: value, initialValue: value);
 
     final validatorToRun =
         validator ?? (itemValidators[key] as NeatValidator<T>?);
@@ -509,14 +560,15 @@ class _NeatFormArrayEngine {
     var allItemsValid = true;
     final validatedItems = <NeatFormArrayItem<K>>[];
 
-    // 1. Validate each sub-form
+    // 1. Validate each sub-form across fields union with itemValidators
     for (final item in state.items) {
-      final newFields = <K, NeatFieldState<Object?>>{};
+      final newFields = Map<K, NeatFieldState<Object?>>.from(item.form.fields);
       var itemValid = true;
 
-      for (final entry in item.form.fields.entries) {
-        final key = entry.key;
-        final field = entry.value;
+      final allKeys = {...item.form.fields.keys, ...itemValidators.keys};
+      for (final key in allKeys) {
+        final field = item.form.fields[key] ??
+            const NeatFieldState<Object?>(value: null, initialValue: null);
         final validator = itemValidators[key];
         final error = validator?.call(field.value);
 
@@ -660,6 +712,7 @@ class NeatFormArrayController<K> extends ChangeNotifier {
         state: _state,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -678,6 +731,7 @@ class NeatFormArrayController<K> extends ChangeNotifier {
         index: index,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -703,6 +757,31 @@ class NeatFormArrayController<K> extends ChangeNotifier {
     );
   }
 
+  /// Removes all items matching the provided [test] predicate.
+  void removeWhere(bool Function(NeatFormArrayItem<K> item) test) {
+    _setState(_NeatFormArrayEngine.removeWhere<K>(state: _state, test: test));
+  }
+
+  /// Clears all items in the array.
+  void clearItems() {
+    _setState(_NeatFormArrayEngine.clearItems<K>(state: _state));
+  }
+
+  /// Replaces all items in the array with a new [valuesList].
+  void setItems(
+    List<Map<K, Object?>> valuesList, {
+    Map<K, bool> optionalKeys = const {},
+  }) {
+    _setState(
+      _NeatFormArrayEngine.setItems<K>(
+        state: _state,
+        valuesList: valuesList,
+        optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
+      ),
+    );
+  }
+
   /// Moves an item from [fromIndex] to [toIndex] (perfect for `ReorderableListView`).
   void moveItem(int fromIndex, int toIndex) {
     _setState(
@@ -712,6 +791,11 @@ class NeatFormArrayController<K> extends ChangeNotifier {
         toIndex: toIndex,
       ),
     );
+  }
+
+  /// Convenience handler for Flutter's `ReorderableListView` `onReorder(oldIndex, newIndex)`.
+  void reorderItem(int oldIndex, int newIndex) {
+    moveItem(oldIndex, newIndex);
   }
 
   /// Updates a field in the sub-form at [itemIndex].
@@ -753,6 +837,68 @@ class NeatFormArrayController<K> extends ChangeNotifier {
         touch: touch,
       ),
     );
+  }
+
+  final Map<String, int> _asyncTokens = {};
+
+  /// Asynchronously validates a field in the sub-form at [itemIndex] with auto race-condition cancellation.
+  Future<void> validateArrayFieldAsync<T>(
+    int itemIndex,
+    K key,
+    Future<NeatValidationError?> Function(T? value) asyncValidator, {
+    bool touch = true,
+  }) async {
+    if (itemIndex < 0 || itemIndex >= length) return;
+    final item = items[itemIndex];
+    final currentField = item.form.fields[key];
+    final value = currentField?.value as T?;
+
+    final tokenKey = '${item.id}_$key';
+    final token = (_asyncTokens[tokenKey] ?? 0) + 1;
+    _asyncTokens[tokenKey] = token;
+
+    // Set validating status
+    final field = (currentField ?? NeatFieldState<Object?>(value: value, initialValue: value)).copyWith(
+      isValidating: true,
+      isTouched: touch || (currentField?.isTouched ?? false),
+    );
+    final newFields = Map<K, NeatFieldState<Object?>>.from(item.form.fields);
+    newFields[key] = field;
+    final newItems = List<NeatFormArrayItem<K>>.from(items);
+    newItems[itemIndex] = item.copyWith(form: item.form.copyWith(fields: newFields));
+    _setState(state.copyWith(items: newItems));
+
+    try {
+      final error = await asyncValidator(value);
+      if (_isDisposed || _asyncTokens[tokenKey] != token) return;
+      if (itemIndex >= length || items[itemIndex].id != item.id) return;
+
+      final resolvedField = items[itemIndex].form.fields[key]?.copyWith(
+            error: error,
+            showError: error != null,
+            isValidating: false,
+            isValidated: true,
+          );
+      if (resolvedField != null) {
+        final updatedFields = Map<K, NeatFieldState<Object?>>.from(items[itemIndex].form.fields);
+        updatedFields[key] = resolvedField;
+        final updatedItems = List<NeatFormArrayItem<K>>.from(items);
+        updatedItems[itemIndex] = items[itemIndex].copyWith(form: items[itemIndex].form.copyWith(fields: updatedFields));
+        _setState(state.copyWith(items: updatedItems));
+      }
+    } on Object catch (_) {
+      if (_isDisposed || _asyncTokens[tokenKey] != token) return;
+      if (itemIndex < length && items[itemIndex].id == item.id) {
+        final fallbackField = items[itemIndex].form.fields[key]?.copyWith(isValidating: false);
+        if (fallbackField != null) {
+          final updatedFields = Map<K, NeatFieldState<Object?>>.from(items[itemIndex].form.fields);
+          updatedFields[key] = fallbackField;
+          final updatedItems = List<NeatFormArrayItem<K>>.from(items);
+          updatedItems[itemIndex] = items[itemIndex].copyWith(form: items[itemIndex].form.copyWith(fields: updatedFields));
+          _setState(state.copyWith(items: updatedItems));
+        }
+      }
+    }
   }
 
   /// Validates all sub-forms and array-level validators.
@@ -889,6 +1035,7 @@ mixin NeatFormArrayNotifierMixin<K> {
       state: state,
       initialValues: initialValues,
       optionalKeys: optionalKeys,
+      templateKeys: itemValidators.keys,
       id: id,
     );
   }
@@ -905,6 +1052,7 @@ mixin NeatFormArrayNotifierMixin<K> {
       index: index,
       initialValues: initialValues,
       optionalKeys: optionalKeys,
+      templateKeys: itemValidators.keys,
       id: id,
     );
   }
@@ -922,6 +1070,29 @@ mixin NeatFormArrayNotifierMixin<K> {
     state = _NeatFormArrayEngine.removeItemById<K>(
       state: state,
       id: id,
+    );
+  }
+
+  /// Removes all items matching the provided [test] predicate.
+  void removeWhere(bool Function(NeatFormArrayItem<K> item) test) {
+    state = _NeatFormArrayEngine.removeWhere<K>(state: state, test: test);
+  }
+
+  /// Clears all items in the array.
+  void clearItems() {
+    state = _NeatFormArrayEngine.clearItems<K>(state: state);
+  }
+
+  /// Replaces all items in the array with a new [valuesList].
+  void setItems(
+    List<Map<K, Object?>> valuesList, {
+    Map<K, bool> optionalKeys = const {},
+  }) {
+    state = _NeatFormArrayEngine.setItems<K>(
+      state: state,
+      valuesList: valuesList,
+      optionalKeys: optionalKeys,
+      templateKeys: itemValidators.keys,
     );
   }
 
@@ -990,6 +1161,18 @@ mixin NeatFormArrayNotifierMixin<K> {
     final isValid = validateArray();
     if (!isValid) {
       state = state.copyWith(status: NeatSubmissionStatus.failure);
+      if (onError != null) {
+        final itemErrors = state.items.map((item) {
+          final errs = <K, NeatValidationError>{};
+          for (final entry in item.form.fields.entries) {
+            if (entry.value.error != null) {
+              errs[entry.key] = entry.value.error!;
+            }
+          }
+          return errs;
+        }).toList();
+        onError(state.error, itemErrors);
+      }
       return false;
     }
 
@@ -1065,6 +1248,7 @@ mixin NeatFormArrayCubitMixin<K> {
         state: state,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -1083,6 +1267,7 @@ mixin NeatFormArrayCubitMixin<K> {
         index: index,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -1104,6 +1289,31 @@ mixin NeatFormArrayCubitMixin<K> {
       _NeatFormArrayEngine.removeItemById<K>(
         state: state,
         id: id,
+      ),
+    );
+  }
+
+  /// Removes all items matching the provided [test] predicate.
+  void removeWhere(bool Function(NeatFormArrayItem<K> item) test) {
+    emit(_NeatFormArrayEngine.removeWhere<K>(state: state, test: test));
+  }
+
+  /// Clears all items in the array.
+  void clearItems() {
+    emit(_NeatFormArrayEngine.clearItems<K>(state: state));
+  }
+
+  /// Replaces all items in the array with a new [valuesList].
+  void setItems(
+    List<Map<K, Object?>> valuesList, {
+    Map<K, bool> optionalKeys = const {},
+  }) {
+    emit(
+      _NeatFormArrayEngine.setItems<K>(
+        state: state,
+        valuesList: valuesList,
+        optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
       ),
     );
   }
@@ -1179,6 +1389,18 @@ mixin NeatFormArrayCubitMixin<K> {
     final isValid = validateArray();
     if (!isValid) {
       emit(state.copyWith(status: NeatSubmissionStatus.failure));
+      if (onError != null) {
+        final itemErrors = state.items.map((item) {
+          final errs = <K, NeatValidationError>{};
+          for (final entry in item.form.fields.entries) {
+            if (entry.value.error != null) {
+              errs[entry.key] = entry.value.error!;
+            }
+          }
+          return errs;
+        }).toList();
+        onError(state.error, itemErrors);
+      }
       return false;
     }
 
@@ -1267,6 +1489,7 @@ mixin NeatNestedFormArrayNotifierMixin<S, K> {
         state: arrayState,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -1285,6 +1508,7 @@ mixin NeatNestedFormArrayNotifierMixin<S, K> {
         index: index,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -1306,6 +1530,31 @@ mixin NeatNestedFormArrayNotifierMixin<S, K> {
       _NeatFormArrayEngine.removeItemById<K>(
         state: arrayState,
         id: id,
+      ),
+    );
+  }
+
+  /// Removes all items matching the provided [test] predicate.
+  void removeWhere(bool Function(NeatFormArrayItem<K> item) test) {
+    _setArrayState(_NeatFormArrayEngine.removeWhere<K>(state: arrayState, test: test));
+  }
+
+  /// Clears all items in the array.
+  void clearItems() {
+    _setArrayState(_NeatFormArrayEngine.clearItems<K>(state: arrayState));
+  }
+
+  /// Replaces all items in the array with a new [valuesList].
+  void setItems(
+    List<Map<K, Object?>> valuesList, {
+    Map<K, bool> optionalKeys = const {},
+  }) {
+    _setArrayState(
+      _NeatFormArrayEngine.setItems<K>(
+        state: arrayState,
+        valuesList: valuesList,
+        optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
       ),
     );
   }
@@ -1381,6 +1630,18 @@ mixin NeatNestedFormArrayNotifierMixin<S, K> {
     final isValid = validateArray();
     if (!isValid) {
       _setArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      if (onError != null) {
+        final itemErrors = arrayState.items.map((item) {
+          final errs = <K, NeatValidationError>{};
+          for (final entry in item.form.fields.entries) {
+            if (entry.value.error != null) {
+              errs[entry.key] = entry.value.error!;
+            }
+          }
+          return errs;
+        }).toList();
+        onError(arrayState.error, itemErrors);
+      }
       return false;
     }
 
@@ -1469,6 +1730,7 @@ mixin NeatNestedFormArrayCubitMixin<S, K> {
         state: arrayState,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -1487,6 +1749,7 @@ mixin NeatNestedFormArrayCubitMixin<S, K> {
         index: index,
         initialValues: initialValues,
         optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
         id: id,
       ),
     );
@@ -1508,6 +1771,31 @@ mixin NeatNestedFormArrayCubitMixin<S, K> {
       _NeatFormArrayEngine.removeItemById<K>(
         state: arrayState,
         id: id,
+      ),
+    );
+  }
+
+  /// Removes all items matching the provided [test] predicate.
+  void removeWhere(bool Function(NeatFormArrayItem<K> item) test) {
+    _emitArrayState(_NeatFormArrayEngine.removeWhere<K>(state: arrayState, test: test));
+  }
+
+  /// Clears all items in the array.
+  void clearItems() {
+    _emitArrayState(_NeatFormArrayEngine.clearItems<K>(state: arrayState));
+  }
+
+  /// Replaces all items in the array with a new [valuesList].
+  void setItems(
+    List<Map<K, Object?>> valuesList, {
+    Map<K, bool> optionalKeys = const {},
+  }) {
+    _emitArrayState(
+      _NeatFormArrayEngine.setItems<K>(
+        state: arrayState,
+        valuesList: valuesList,
+        optionalKeys: optionalKeys,
+        templateKeys: itemValidators.keys,
       ),
     );
   }
@@ -1583,6 +1871,18 @@ mixin NeatNestedFormArrayCubitMixin<S, K> {
     final isValid = validateArray();
     if (!isValid) {
       _emitArrayState(arrayState.copyWith(status: NeatSubmissionStatus.failure));
+      if (onError != null) {
+        final itemErrors = arrayState.items.map((item) {
+          final errs = <K, NeatValidationError>{};
+          for (final entry in item.form.fields.entries) {
+            if (entry.value.error != null) {
+              errs[entry.key] = entry.value.error!;
+            }
+          }
+          return errs;
+        }).toList();
+        onError(arrayState.error, itemErrors);
+      }
       return false;
     }
 

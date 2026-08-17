@@ -334,6 +334,9 @@ class NeatFormState<K> {
   /// Returns `true` if any field in the form has been modified from its initial value.
   bool get isDirty => fields.isDirty;
 
+  /// Returns `true` if any field in the form has been touched/interacted with.
+  bool get isTouched => fields.values.any((f) => f.isTouched);
+
   /// Returns `true` if any field is currently undergoing async validation.
   bool get isValidating => fields.values.any((f) => f.isValidating);
 

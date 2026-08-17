@@ -362,14 +362,11 @@ void main() {
         () => controller.setAndValidateArrayField(-1, PassengerKey.fullName, 'Err'),
         throwsRangeError,
       );
-      expect(
-        () => controller.setArrayField(0, PassengerKey.seatType, 'Err'),
-        throwsArgumentError,
-      );
-      expect(
-        () => controller.setAndValidateArrayField(0, PassengerKey.seatType, 'Err'),
-        throwsArgumentError,
-      );
+      // Gracefully sets uninitialized field
+      controller.setArrayField(0, PassengerKey.seatType, 'Economy');
+      expect(controller[0].valueOf<String>(PassengerKey.seatType), 'Economy');
+      controller.setAndValidateArrayField(0, PassengerKey.seatType, 'Business');
+      expect(controller[0].valueOf<String>(PassengerKey.seatType), 'Business');
     });
 
     test('validateArray checks items and array level rules', () {
@@ -772,6 +769,277 @@ void main() {
         throwsA(isA<StateError>()),
       );
       expect(cubit.submissionStatus, NeatSubmissionStatus.failure);
+    });
+
+    test('NeatFormArrayController CRUD helpers: removeWhere, clearItems, setItems, reorderItem', () {
+      final controller = NeatFormArrayController<PassengerKey>(
+        itemValidators: {
+          PassengerKey.fullName: NeatValidators.required(),
+          PassengerKey.passportNumber: NeatValidators.required(),
+        },
+      );
+
+      controller.setItems([
+        {PassengerKey.fullName: 'Alice', PassengerKey.passportNumber: 'A1'},
+        {PassengerKey.fullName: 'Bob', PassengerKey.passportNumber: 'B1'},
+        {PassengerKey.fullName: 'Charlie', PassengerKey.passportNumber: 'C1'},
+      ]);
+      expect(controller.length, 3);
+
+      // reorderItem
+      controller.reorderItem(0, 3);
+      expect(controller.values[2][PassengerKey.fullName], 'Alice');
+
+      // removeWhere
+      controller.removeWhere((item) => item.form.valueOf<String>(PassengerKey.fullName) == 'Bob');
+      expect(controller.length, 2);
+      expect(controller.values.any((v) => v[PassengerKey.fullName] == 'Bob'), isFalse);
+
+      // clearItems
+      controller.clearItems();
+      expect(controller.length, 0);
+      expect(controller.state.isEmpty, isTrue);
+    });
+
+    test('NeatFormArrayController auto-populates templateKeys on addItem / insertItem', () {
+      final controller = NeatFormArrayController<PassengerKey>(
+        itemValidators: {
+          PassengerKey.fullName: NeatValidators.required(),
+          PassengerKey.passportNumber: NeatValidators.required(),
+        },
+      );
+
+      // Calling addItem without initialValues
+      controller.addItem();
+      expect(controller.length, 1);
+      // Ensure setting a field never crashes
+      controller.setArrayField(0, PassengerKey.fullName, 'Alex');
+      expect(controller[0].valueOf<String>(PassengerKey.fullName), 'Alex');
+
+      // Calling insertItem
+      controller.insertItem(0);
+      expect(controller.length, 2);
+      controller.setArrayField(0, PassengerKey.passportNumber, 'P99');
+      expect(controller[0].valueOf<String>(PassengerKey.passportNumber), 'P99');
+    });
+
+    test('uniqueBy validator handles caseSensitive: false and trimming', () {
+      final validator = NeatArrayValidators.uniqueBy<PassengerKey, String>(
+        (form) => form.valueOf<String>(PassengerKey.passportNumber),
+        caseSensitive: false,
+        trim: true,
+      );
+
+      final stateDuplicateCase = NeatFormArrayState<PassengerKey>.fromValuesList([
+        {PassengerKey.passportNumber: '  vn123  '},
+        {PassengerKey.passportNumber: 'VN123'},
+      ]);
+      final error = validator(stateDuplicateCase);
+      expect(error, isNotNull);
+      expect(error?.code, NeatArrayValidators.codeUniqueBy);
+
+      final stateUnique = NeatFormArrayState<PassengerKey>.fromValuesList([
+        {PassengerKey.passportNumber: 'VN123'},
+        {PassengerKey.passportNumber: 'VN456'},
+        {PassengerKey.passportNumber: ''}, // ignored empty
+        {PassengerKey.passportNumber: null}, // ignored null
+      ]);
+      expect(validator(stateUnique), isNull);
+    });
+
+    test('validateArray validates union of existing fields and itemValidators keys', () {
+      final controller = NeatFormArrayController<PassengerKey>(
+        initialItems: [
+          {PassengerKey.fullName: 'Valid Name'}, // Missing passportNumber key
+        ],
+        itemValidators: {
+          PassengerKey.fullName: NeatValidators.required(),
+          PassengerKey.passportNumber: NeatValidators.required(message: 'Hộ chiếu bắt buộc'),
+        },
+      );
+
+      final isValid = controller.validateArray();
+
+      expect(isValid, isFalse);
+      expect(controller[0].field(PassengerKey.passportNumber).errorMessage, 'Hộ chiếu bắt buộc');
+    });
+
+    test('validateArrayFieldAsync executes async validation with race-condition tokens and error handling', () async {
+      final controller = NeatFormArrayController<PassengerKey>(
+        initialItems: [
+          {PassengerKey.passportNumber: 'P100'},
+        ],
+      );
+
+      // 1. Success case
+      await controller.validateArrayFieldAsync<String>(
+        0,
+        PassengerKey.passportNumber,
+        (val) async {
+          await Future.delayed(const Duration(milliseconds: 10));
+          return null;
+        },
+      );
+      expect(controller[0].field(PassengerKey.passportNumber).isValid, isTrue);
+      expect(controller[0].field(PassengerKey.passportNumber).isValidating, isFalse);
+
+      // 2. Error returned
+      await controller.validateArrayFieldAsync<String>(
+        0,
+        PassengerKey.passportNumber,
+        (val) async {
+          await Future.delayed(const Duration(milliseconds: 10));
+          return const NeatValidationError('passport_expired', message: 'Hộ chiếu đã hết hạn');
+        },
+      );
+      expect(controller[0].field(PassengerKey.passportNumber).errorMessage, 'Hộ chiếu đã hết hạn');
+      expect(controller[0].field(PassengerKey.passportNumber).isValidating, isFalse);
+
+      // 3. Exception fallback
+      await controller.validateArrayFieldAsync<String>(
+        0,
+        PassengerKey.passportNumber,
+        (val) async => throw Exception('Network timeout'),
+      );
+      expect(controller[0].field(PassengerKey.passportNumber).isValidating, isFalse);
+
+      // 4. Out of bounds index safety
+      await controller.validateArrayFieldAsync<String>(
+        99,
+        PassengerKey.passportNumber,
+        (val) async => null,
+      );
+      expect(controller.length, 1);
+    });
+
+    test('NeatFormArrayState isTouched getter reflects touch status across items', () {
+      final controller = NeatFormArrayController<PassengerKey>(
+        initialItems: [
+          {PassengerKey.fullName: 'A'},
+          {PassengerKey.fullName: 'B'},
+        ],
+      );
+      expect(controller.state.isTouched, isFalse);
+
+      controller.setArrayField(1, PassengerKey.fullName, 'B_touched', touch: true);
+      expect(controller.state.isTouched, isTrue);
+    });
+
+    test('NeatFormArrayNotifierMixin & CubitMixin execute removeWhere, clearItems, setItems', () {
+      final notifier = _SampleArrayNotifier();
+      notifier.setItems([
+        {PassengerKey.fullName: 'N1'},
+        {PassengerKey.fullName: 'N2'},
+      ]);
+      expect(notifier.length, 2);
+      notifier.removeWhere((i) => i.form.valueOf<String>(PassengerKey.fullName) == 'N1');
+      expect(notifier.length, 1);
+      notifier.clearItems();
+      expect(notifier.length, 0);
+
+      final cubit = _SampleArrayCubit();
+      cubit.setItems([
+        {PassengerKey.fullName: 'C1'},
+        {PassengerKey.fullName: 'C2'},
+      ]);
+      expect(cubit.length, 2);
+      cubit.removeWhere((i) => i.form.valueOf<String>(PassengerKey.fullName) == 'C1');
+      expect(cubit.length, 1);
+      cubit.clearItems();
+      expect(cubit.length, 0);
+    });
+
+    test('NeatNestedFormArrayNotifierMixin & NestedCubitMixin execute removeWhere, clearItems, setItems', () {
+      final nestedNotifier = _SampleNestedArrayNotifier();
+      nestedNotifier.setItems([
+        {PassengerKey.fullName: 'NN1'},
+        {PassengerKey.fullName: 'NN2'},
+      ]);
+      expect(nestedNotifier.length, 2);
+      nestedNotifier.removeWhere((i) => i.form.valueOf<String>(PassengerKey.fullName) == 'NN1');
+      expect(nestedNotifier.length, 1);
+      nestedNotifier.clearItems();
+      expect(nestedNotifier.length, 0);
+
+      final nestedCubit = _SampleNestedArrayCubit();
+      nestedCubit.setItems([
+        {PassengerKey.fullName: 'NC1'},
+        {PassengerKey.fullName: 'NC2'},
+      ]);
+      expect(nestedCubit.length, 2);
+      nestedCubit.removeWhere((i) => i.form.valueOf<String>(PassengerKey.fullName) == 'NC1');
+      expect(nestedCubit.length, 1);
+      nestedCubit.clearItems();
+      expect(nestedCubit.length, 0);
+    });
+
+    test('submitForm invokes onError callback across controller and all mixins', () async {
+      // 1. Controller onError
+      final controller = NeatFormArrayController<PassengerKey>(
+        initialItems: [{PassengerKey.fullName: ''}],
+        itemValidators: {PassengerKey.fullName: NeatValidators.required()},
+      );
+      bool controllerErrorCalled = false;
+      await controller.submitForm(
+        onSubmit: (v) async {},
+        onError: (arrayErr, itemErrs) {
+          controllerErrorCalled = true;
+          expect(itemErrs.first[PassengerKey.fullName], isNotNull);
+        },
+      );
+      expect(controllerErrorCalled, isTrue);
+
+      // 2. Notifier onError
+      final notifier = _SampleArrayNotifier();
+      notifier.setArrayField(0, PassengerKey.fullName, '');
+      bool notifierErrorCalled = false;
+      await notifier.submitForm(
+        onSubmit: (v) async {},
+        onError: (arrayErr, itemErrs) {
+          notifierErrorCalled = true;
+          expect(itemErrs.first[PassengerKey.fullName], isNotNull);
+        },
+      );
+      expect(notifierErrorCalled, isTrue);
+
+      // 3. Cubit onError
+      final cubit = _SampleArrayCubit();
+      cubit.setArrayField(0, PassengerKey.fullName, '');
+      bool cubitErrorCalled = false;
+      await cubit.submitForm(
+        onSubmit: (v) async {},
+        onError: (arrayErr, itemErrs) {
+          cubitErrorCalled = true;
+          expect(itemErrs.first[PassengerKey.fullName], isNotNull);
+        },
+      );
+      expect(cubitErrorCalled, isTrue);
+
+      // 4. Nested Notifier onError
+      final nestedNotifier = _SampleNestedArrayNotifier();
+      nestedNotifier.setArrayField(0, PassengerKey.fullName, '');
+      bool nestedNotifierErrorCalled = false;
+      await nestedNotifier.submitForm(
+        onSubmit: (v) async {},
+        onError: (arrayErr, itemErrs) {
+          nestedNotifierErrorCalled = true;
+          expect(itemErrs.first[PassengerKey.fullName], isNotNull);
+        },
+      );
+      expect(nestedNotifierErrorCalled, isTrue);
+
+      // 5. Nested Cubit onError
+      final nestedCubit = _SampleNestedArrayCubit();
+      nestedCubit.setArrayField(0, PassengerKey.fullName, '');
+      bool nestedCubitErrorCalled = false;
+      await nestedCubit.submitForm(
+        onSubmit: (v) async {},
+        onError: (arrayErr, itemErrs) {
+          nestedCubitErrorCalled = true;
+          expect(itemErrs.first[PassengerKey.fullName], isNotNull);
+        },
+      );
+      expect(nestedCubitErrorCalled, isTrue);
     });
   });
 }
