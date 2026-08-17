@@ -48,7 +48,7 @@ class FormShowcaseHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Row(
@@ -71,6 +71,8 @@ class FormShowcaseHomePage extends StatelessWidget {
             ),
           ),
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             indicatorColor: Colors.white,
             indicatorWeight: 3,
             labelColor: Colors.white,
@@ -80,6 +82,7 @@ class FormShowcaseHomePage extends StatelessWidget {
               Tab(icon: Icon(Icons.person_add_rounded), text: 'Tài khoản & Auth'),
               Tab(icon: Icon(Icons.credit_card_rounded), text: 'Fintech & Thẻ'),
               Tab(icon: Icon(Icons.hotel_rounded), text: 'Booking & E-Com'),
+              Tab(icon: Icon(Icons.flight_takeoff_rounded), text: 'Dynamic Array'),
             ],
           ),
         ),
@@ -88,6 +91,7 @@ class FormShowcaseHomePage extends StatelessWidget {
             AuthRegistrationTab(),
             FintechPaymentTab(),
             BookingCrossFieldTab(),
+            DynamicPassengerArrayTab(),
           ],
         ),
       ),
@@ -789,4 +793,289 @@ Widget _buildSectionHeader(String title, IconData icon) {
       ),
     ],
   );
+}
+
+// ==========================================
+// TAB 4: DYNAMIC PASSENGER ARRAY FORM
+// ==========================================
+
+enum PassengerField { fullName, passportNumber, seatType }
+
+class DynamicPassengerArrayTab extends StatefulWidget {
+  const DynamicPassengerArrayTab({super.key});
+
+  @override
+  State<DynamicPassengerArrayTab> createState() => _DynamicPassengerArrayTabState();
+}
+
+class _DynamicPassengerArrayTabState extends State<DynamicPassengerArrayTab> {
+  late final NeatFormArrayController<PassengerField> _passengers;
+
+  @override
+  void initState() {
+    super.initState();
+    _passengers = NeatFormArrayController<PassengerField>(
+      initialItems: [
+        {
+          PassengerField.fullName: 'Nguyen Van A',
+          PassengerField.passportNumber: 'B1234567',
+          PassengerField.seatType: 'Economy',
+        },
+      ],
+      itemValidators: {
+        PassengerField.fullName: NeatValidators.combine([
+          NeatValidators.required(message: 'Vui lòng nhập họ và tên hành khách'),
+          NeatValidators.minLength(3, message: 'Tên phải từ 3 ký tự trở lên'),
+        ]),
+        PassengerField.passportNumber: NeatValidators.combine([
+          NeatValidators.required(message: 'Vui lòng nhập số hộ chiếu/CCCD'),
+          NeatValidators.alphanumericOnly(message: 'Số hộ chiếu chỉ gồm chữ cái và số'),
+          NeatValidators.minLength(6, message: 'Tối thiểu 6 ký tự'),
+        ]),
+      },
+      arrayValidators: [
+        NeatArrayValidators.minItems(1, message: 'Cần ít nhất 1 hành khách cho chuyến bay'),
+        NeatArrayValidators.maxItems(4, message: 'Tối đa 4 hành khách mỗi lượt đặt chỗ'),
+        NeatArrayValidators.uniqueBy<PassengerField, String>(
+          (form) => form.valueOf<String>(PassengerField.passportNumber),
+          message: 'Số hộ chiếu không được trùng lặp giữa các hành khách',
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _passengers.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _passengers,
+      builder: (context, _) {
+        return ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _buildSectionHeader(
+              'Danh Sách Hành Khách Bay (${_passengers.length}/4)',
+              Icons.airplanemode_active_rounded,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Quản lý danh sách sub-forms động: thêm, bớt, sắp xếp và validate không trùng lặp số hộ chiếu.',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+
+            if (_passengers.state.isErrorVisible)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _passengers.state.errorMessage ?? '',
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            ..._passengers.items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final form = item.form;
+
+              return Card(
+                key: ValueKey(item.id),
+                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: !form.isValid ? Colors.red.shade300 : Colors.grey.shade200,
+                  ),
+                ),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundColor: const Color(0xFF4F46E5),
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Hành Khách #${index + 1}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                          if (_passengers.length > 1)
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                              tooltip: 'Xóa hành khách này',
+                              onPressed: () => _passengers.removeItemAt(index),
+                            ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      TextFormField(
+                        initialValue: form.valueOf<String>(PassengerField.fullName),
+                        decoration: InputDecoration(
+                          labelText: 'Họ và Tên (In hoa không dấu)*',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          errorText: form.field(PassengerField.fullName).errorMessage,
+                        ),
+                        inputFormatters: [
+                          NeatInputFormatters.uppercase(),
+                        ],
+                        onChanged: (v) => _passengers.setArrayField(index, PassengerField.fullName, v),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextFormField(
+                              initialValue: form.valueOf<String>(PassengerField.passportNumber),
+                              decoration: InputDecoration(
+                                labelText: 'Số Hộ Chiếu / CCCD*',
+                                prefixIcon: const Icon(Icons.badge_outlined),
+                                errorText: form.field(PassengerField.passportNumber).errorMessage,
+                              ),
+                              inputFormatters: [
+                                NeatInputFormatters.uppercase(),
+                                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                              ],
+                              onChanged: (v) => _passengers.setArrayField(index, PassengerField.passportNumber, v),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField<String>(
+                              value: form.valueOf<String>(PassengerField.seatType) ?? 'Economy',
+                              decoration: const InputDecoration(
+                                labelText: 'Hạng Vé',
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'Economy', child: Text('Phổ thông')),
+                                DropdownMenuItem(value: 'Business', child: Text('Thương gia')),
+                                DropdownMenuItem(value: 'First', child: Text('Hạng nhất')),
+                              ],
+                              onChanged: (v) {
+                                if (v != null) {
+                                  _passengers.setArrayField(index, PassengerField.seatType, v);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+
+            const SizedBox(height: 8),
+
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                side: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+              ),
+              onPressed: _passengers.length >= 4
+                  ? null
+                  : () {
+                      _passengers.addItem({
+                        PassengerField.fullName: '',
+                        PassengerField.passportNumber: '',
+                        PassengerField.seatType: 'Economy',
+                      });
+                    },
+              icon: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF4F46E5)),
+              label: Text(
+                _passengers.length >= 4
+                    ? 'Đã đạt giới hạn tối đa 4 hành khách'
+                    : '+ Thêm Hành Khách',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: _passengers.submissionStatus.isSubmitting
+                  ? null
+                  : () async {
+                      final success = await _passengers.submitForm(
+                        onSubmit: (values) async {
+                          await Future<void>.delayed(const Duration(seconds: 1));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('✈️ Đặt vé thành công cho ${values.length} hành khách!'),
+                                backgroundColor: const Color(0xFF4F46E5),
+                              ),
+                            );
+                          }
+                        },
+                        onError: (arrayError, itemErrors) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  arrayError?.message ?? '⚠️ Vui lòng kiểm tra lại thông tin các hành khách',
+                                ),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          }
+                        },
+                      );
+                    },
+              child: _passengers.submissionStatus.isSubmitting
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Xác Nhận & Xuất Vé', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

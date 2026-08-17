@@ -2,9 +2,9 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.2-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 134 Passed](https://img.shields.io/badge/tests-134%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 152 Passed](https://img.shields.io/badge/tests-152%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
@@ -558,6 +558,89 @@ TextField(
 - `NeatInputFormatters.lowercase()`: Auto-lowercases input (usernames, email handles).
 - `NeatInputFormatters.latinOnly()`: Permits only ASCII/latin characters `[a-zA-Z0-9_]`.
 - `NeatInputFormatters.noSpaces()`: Denies all whitespace characters.
+
+---
+
+### ✈️ Dynamic Form Array (`NeatFormArray`) — Dynamic Multi-Item Forms
+
+Easily manage dynamic lists of sub-forms (flight passengers, multiple shipping addresses, invoice line items) with **Stable Unique IDs** to eliminate Flutter widget focus hopping during deletions:
+
+```dart
+// 1. Declare item enum fields
+enum PassengerField { fullName, passportNumber, seatType }
+
+// 2. Instantiate Array Controller
+final passengerArray = NeatFormArrayController<PassengerField>(
+  initialItems: [
+    {PassengerField.fullName: 'Nguyen Van A', PassengerField.passportNumber: 'B1234567'},
+  ],
+  // Template validators applied to each item
+  itemValidators: {
+    PassengerField.fullName: NeatValidators.required(message: 'Name is required'),
+    PassengerField.passportNumber: NeatValidators.combine([
+      NeatValidators.required(message: 'Passport number is required'),
+      NeatValidators.alphanumericOnly(message: 'Must be alphanumeric'),
+    ]),
+  },
+  // Array-level validators
+  arrayValidators: [
+    NeatArrayValidators.minItems(1, message: 'At least 1 passenger is required'),
+    NeatArrayValidators.maxItems(5, message: 'Maximum 5 passengers allowed'),
+    NeatArrayValidators.uniqueBy<PassengerField, String>(
+      (form) => form.valueOf<String>(PassengerField.passportNumber),
+      message: 'Passport numbers must be unique across all passengers',
+    ),
+  ],
+);
+
+// 3. Declarative Flutter UI (Use item.id as ValueKey for 100% stable focus)
+ListenableBuilder(
+  listenable: passengerArray,
+  builder: (context, _) {
+    return Column(
+      children: [
+        ...passengerArray.items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final form = item.form;
+
+          return Card(
+            key: ValueKey(item.id), // ✨ NEVER hops focus on insert/delete!
+            child: ListTile(
+              title: TextField(
+                onChanged: (v) => passengerArray.setArrayField(index, PassengerField.fullName, v),
+                decoration: InputDecoration(
+                  labelText: 'Passenger #${index + 1} Name',
+                  errorText: form.field(PassengerField.fullName).errorMessage,
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => passengerArray.removeItemAt(index),
+              ),
+            ),
+          );
+        }),
+
+        ElevatedButton(
+          onPressed: () => passengerArray.addItem({PassengerField.fullName: ''}),
+          child: const Text('+ Add Passenger'),
+        ),
+      ],
+    );
+  },
+);
+```
+
+#### Supported `NeatFormArray` Operations:
+- `addItem(initialValues)`: Appends a new sub-form item to the list.
+- `insertItem(index, initialValues)`: Inserts a sub-form at `index`.
+- `removeItemAt(index)` / `removeItemById(id)`: Safely removes a sub-form item.
+- `moveItem(fromIndex, toIndex)`: Reorders items (designed for `ReorderableListView`).
+- `setArrayField(itemIndex, key, value)`: Mutates a specific item's field.
+- `validateArray()`: Simultaneously validates all sub-forms and array constraints (`minItems`, `maxItems`, `uniqueBy`).
+- `submitForm(onSubmit: (values) async { ... })`: Extracts submitted values as `List<Map<K, Object?>>`.
+- Full mixin support for Riverpod (`NeatFormArrayNotifierMixin`) and BLoC (`NeatFormArrayCubitMixin`).
 
 ---
 

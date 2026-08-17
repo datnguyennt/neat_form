@@ -2,9 +2,9 @@
 
 Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạnh mẽ, type-safe (100% `Object?`) dành cho **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.2-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 134 Passed](https://img.shields.io/badge/tests-134%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 152 Passed](https://img.shields.io/badge/tests-152%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](#tiếng-việt) | [English](README_EN.md)**
@@ -559,6 +559,89 @@ TextField(
 - `NeatInputFormatters.lowercase()`: Tự động viết thường (username, email).
 - `NeatInputFormatters.latinOnly()`: Chỉ cho phép ký tự không dấu `[a-zA-Z0-9_]`.
 - `NeatInputFormatters.noSpaces()`: Chặn khoảng trắng.
+
+---
+
+### ✈️ Dynamic Form Array (`NeatFormArray`) — Danh sách Form Động
+
+Quản lý danh sách các sub-form thêm / bớt / sắp xếp động (như danh sách hành khách đặt vé máy bay, nhiều địa chỉ nhận hàng, dòng sản phẩm trong hóa đơn) với **Stable Unique ID** chống nhảy focus khi xóa item:
+
+```dart
+// 1. Khai báo Enum trường của từng item
+enum PassengerField { fullName, passportNumber, seatType }
+
+// 2. Khởi tạo Controller mảng
+final passengerArray = NeatFormArrayController<PassengerField>(
+  initialItems: [
+    {PassengerField.fullName: 'Nguyen Van A', PassengerField.passportNumber: 'B1234567'},
+  ],
+  // Template validators áp dụng cho mỗi item
+  itemValidators: {
+    PassengerField.fullName: NeatValidators.required(message: 'Vui lòng nhập họ tên'),
+    PassengerField.passportNumber: NeatValidators.combine([
+      NeatValidators.required(message: 'Vui lòng nhập số hộ chiếu'),
+      NeatValidators.alphanumericOnly(message: 'Số hộ chiếu chỉ gồm chữ và số'),
+    ]),
+  },
+  // Quy tắc kiểm tra trên toàn bộ danh sách
+  arrayValidators: [
+    NeatArrayValidators.minItems(1, message: 'Cần ít nhất 1 hành khách'),
+    NeatArrayValidators.maxItems(5, message: 'Tối đa 5 hành khách mỗi lượt đặt'),
+    NeatArrayValidators.uniqueBy<PassengerField, String>(
+      (form) => form.valueOf<String>(PassengerField.passportNumber),
+      message: 'Số hộ chiếu không được trùng nhau giữa các hành khách',
+    ),
+  ],
+);
+
+// 3. UI Flutter Declarative (Sử dụng item.id làm ValueKey an toàn 100%)
+ListenableBuilder(
+  listenable: passengerArray,
+  builder: (context, _) {
+    return Column(
+      children: [
+        ...passengerArray.items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final form = item.form;
+
+          return Card(
+            key: ValueKey(item.id), // ✨ KHÔNG BAO GIỜ bị nhảy focus khi xóa/thêm item!
+            child: ListTile(
+              title: TextField(
+                onChanged: (v) => passengerArray.setArrayField(index, PassengerField.fullName, v),
+                decoration: InputDecoration(
+                  labelText: 'Họ tên hành khách #${index + 1}',
+                  errorText: form.field(PassengerField.fullName).errorMessage,
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => passengerArray.removeItemAt(index),
+              ),
+            ),
+          );
+        }),
+
+        ElevatedButton(
+          onPressed: () => passengerArray.addItem({PassengerField.fullName: ''}),
+          child: const Text('+ Thêm Hành Khách'),
+        ),
+      ],
+    );
+  },
+);
+```
+
+#### Các hàm thao tác với `NeatFormArray`:
+- `addItem(initialValues)`: Thêm một sub-form mới vào cuối danh sách.
+- `insertItem(index, initialValues)`: Chèn một sub-form vào vị trí `index`.
+- `removeItemAt(index)` / `removeItemById(id)`: Xóa sub-form an toàn.
+- `moveItem(fromIndex, toIndex)`: Hoán đổi vị trí (dành cho `ReorderableListView`).
+- `setArrayField(itemIndex, key, value)`: Cập nhật giá trị trường của item cụ thể.
+- `validateArray()`: Validate đồng thời tất cả sub-forms và các ràng buộc toàn mảng (`minItems`, `maxItems`, `uniqueBy`).
+- `submitForm(onSubmit: (values) async { ... })`: Submit lấy dữ liệu `List<Map<K, Object?>>`.
+- Hỗ trợ đầy đủ mixin Riverpod (`NeatFormArrayNotifierMixin`) & BLoC (`NeatFormArrayCubitMixin`).
 
 ---
 

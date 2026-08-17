@@ -18,6 +18,8 @@ void main() {
       expect(find.text('Fintech & Thẻ'), findsOneWidget);
       expect(find.text('Booking & E-Com'), findsOneWidget);
 
+      expect(find.text('Dynamic Array'), findsOneWidget);
+
       // Verify Tab 1 content
       expect(find.text('Đăng ký tài khoản & Bảo mật'), findsOneWidget);
 
@@ -30,6 +32,18 @@ void main() {
       await tester.tap(find.text('Booking & E-Com'));
       await tester.pumpAndSettle();
       expect(find.text('Đặt phòng khách sạn & Cross-field'), findsOneWidget);
+
+      // Switch to Tab 4
+      await tester.tap(find.text('Dynamic Array'));
+      await tester.pumpAndSettle();
+      expect(find.text('Danh Sách Hành Khách Bay (1/4)'), findsOneWidget);
+
+      // Add a passenger in Tab 4
+      final addPassengerBtn = find.text('+ Thêm Hành Khách');
+      expect(addPassengerBtn, findsOneWidget);
+      await tester.tap(addPassengerBtn);
+      await tester.pumpAndSettle();
+      expect(find.text('Danh Sách Hành Khách Bay (2/4)'), findsOneWidget);
     });
 
     testWidgets('Tab 1 submission shows errors when required fields are empty',
