@@ -1,3 +1,8 @@
+# 1.3.2
+
+- **Documentation & Table of Contents:**
+  - Fixed markdown anchor slug links in `README.md` and `README_EN.md` for seamless table of contents navigation on `pub.dev` and GitHub.
+
 # 1.3.1
 
 - **CI/CD & Automated Publishing:**
