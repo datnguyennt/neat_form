@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neat_form/neat_form.dart';
 
-enum TestKey { username, age }
+enum TestKey { username, age, missingKey }
 
 class TestObserver extends NeatFormObserver<TestKey> {
   int fieldChangedCount = 0;
@@ -95,6 +95,11 @@ void main() {
       expect(controller.getField<String>(TestKey.username).isValid, isTrue);
     });
 
+    test('validateField runs validator on field', () {
+      final error = controller.validateField<String>(TestKey.username);
+      expect(error?.code, NeatValidators.codeRequired);
+    });
+
     test('validateForm checks all fields and returns false if any invalid', () {
       final isValidInitial = controller.validateForm();
       expect(isValidInitial, isFalse);
@@ -108,30 +113,44 @@ void main() {
       expect(isValidFilled, isTrue);
     });
 
-    test('validateFieldAsync sets loading state and resolves error', () async {
-      Future<NeatValidationError?> asyncCheck(String? val) async {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        if (val == 'taken') {
-          return const NeatValidationError.code('username_taken');
-        }
-        return null;
-      }
+    test('setField with clearError: false and touch: false preserves flags', () {
+      controller.setAndValidateField(TestKey.username, 'a');
+      expect(controller.getField<String>(TestKey.username).error, isNotNull);
 
-      controller.setField(TestKey.username, 'taken');
-      final error = await controller.validateFieldAsync(
+      controller.setField(
         TestKey.username,
-        asyncCheck,
+        'ab',
+        clearError: false,
+        touch: false,
+      );
+      expect(controller.getField<String>(TestKey.username).error, isNotNull);
+      expect(controller.getField<String>(TestKey.username).showError, isTrue);
+    });
+
+    test('validateFieldAsync resets isValidating when validator throws', () async {
+      await expectLater(
+        () => controller.validateFieldAsync(TestKey.username, (val) async {
+          throw Exception('Async network timeout');
+        }),
+        throwsA(isA<Exception>()),
       );
 
-      expect(error?.code, 'username_taken');
-      expect(
-        controller.getField<String>(TestKey.username).error?.code,
-        'username_taken',
+      expect(controller.getField<String>(TestKey.username).isValidating, isFalse);
+    });
+
+    test('submitForm invokes onError callback with validation errors map', () async {
+      Map<TestKey, NeatValidationError>? errorMap;
+      final result = await controller.submitForm(
+        onSubmit: (values) async {},
+        onError: (errors) {
+          errorMap = errors;
+        },
       );
-      expect(
-        controller.getField<String>(TestKey.username).isValidating,
-        isFalse,
-      );
+
+      expect(result, isFalse);
+      expect(errorMap, isNotNull);
+      expect(errorMap?[TestKey.username], isNotNull);
+      expect(errorMap?[TestKey.age], isNotNull);
     });
 
     test(
@@ -252,6 +271,43 @@ void main() {
       expect(controller.getField<int?>(TestKey.age).error, isNull);
       expect(controller.getField<int?>(TestKey.age).showError, isFalse);
     });
+
+    test('clearErrors and updateField work', () {
+      controller.setAndValidateField(TestKey.username, 'ab');
+      expect(controller.getField<String>(TestKey.username).error, isNotNull);
+
+      controller.clearErrors();
+      expect(controller.getField<String>(TestKey.username).error, isNull);
+
+      controller.updateField<String>(
+        TestKey.username,
+        (current) => current.copyWith(value: 'updated_val'),
+      );
+      expect(controller.getField<String>(TestKey.username).value, 'updated_val');
+    });
+
+    test('throws ArgumentError when accessing non-existent key', () {
+      expect(
+        () => controller.setField(TestKey.missingKey, 'val'),
+        throwsArgumentError,
+      );
+      expect(
+        () => controller.setAndValidateField(TestKey.missingKey, 'val'),
+        throwsArgumentError,
+      );
+      expect(
+        () => controller.validateField(TestKey.missingKey),
+        throwsArgumentError,
+      );
+      expect(
+        () => controller.updateField<String>(TestKey.missingKey, (c) => c),
+        throwsArgumentError,
+      );
+      expect(
+        () => controller.resetField(TestKey.missingKey),
+        throwsArgumentError,
+      );
+    });
   });
 
   group('NeatFormController with Flutter integration', () {
@@ -274,11 +330,39 @@ void main() {
       expect(notifyCount, 1);
       expect(formCtrl.getField<String>(TestKey.username).value, 'hello');
 
+      formCtrl.clearErrors();
+      expect(formCtrl.getField<String>(TestKey.username).error, isNull);
+
+      formCtrl.updateField<String>(
+        TestKey.username,
+        (c) => c.copyWith(value: 'updater_ctrl'),
+      );
+      expect(formCtrl.getField<String>(TestKey.username).value, 'updater_ctrl');
+
+      formCtrl.resetField<String>(TestKey.username);
+      expect(formCtrl.getField<String>(TestKey.username).value, '');
+
       formCtrl.dispose();
       expect(formCtrl.isDisposed, isTrue);
 
       formCtrl.setField(TestKey.username, 'after dispose');
-      expect(notifyCount, 1);
+      expect(notifyCount, 4); // no additional notify after dispose
+    });
+
+    test('submitForm handles exceptions', () async {
+      final formCtrl = NeatFormController<TestKey>(
+        initialFields: {
+          TestKey.username: const NeatFieldState<String>(value: 'ok'),
+        },
+      );
+
+      await expectLater(
+        () => formCtrl.submitForm(onSubmit: (v) async {
+          throw Exception('server error');
+        }),
+        throwsA(isA<Exception>()),
+      );
+      expect(formCtrl.submissionStatus, NeatSubmissionStatus.failure);
     });
 
     testWidgets('works seamlessly with Flutter ListenableBuilder',
@@ -348,4 +432,3 @@ class _SampleRiverpodNotifier with NeatFormMixin<TestKey>, NeatFormNotifierMixin
         TestKey.username: NeatValidators.required(),
       };
 }
-

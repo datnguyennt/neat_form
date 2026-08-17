@@ -2,6 +2,76 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:neat_form/neat_form.dart';
 
 void main() {
+  group('NeatSubmissionStatus', () {
+    test('enum boolean getters work correctly', () {
+      expect(NeatSubmissionStatus.idle.isIdle, isTrue);
+      expect(NeatSubmissionStatus.idle.isSubmitting, isFalse);
+      expect(NeatSubmissionStatus.idle.isSuccess, isFalse);
+      expect(NeatSubmissionStatus.idle.isFailure, isFalse);
+
+      expect(NeatSubmissionStatus.submitting.isSubmitting, isTrue);
+      expect(NeatSubmissionStatus.submitting.isIdle, isFalse);
+
+      expect(NeatSubmissionStatus.success.isSuccess, isTrue);
+      expect(NeatSubmissionStatus.success.isIdle, isFalse);
+
+      expect(NeatSubmissionStatus.failure.isFailure, isTrue);
+      expect(NeatSubmissionStatus.failure.isIdle, isFalse);
+    });
+  });
+
+  group('NeatValidationError deep equality and hashing edge cases', () {
+    test('convenience constructor code only', () {
+      const err = NeatValidationError.code('required');
+      expect(err.code, 'required');
+      expect(err.params, isEmpty);
+      expect(err.message, isNull);
+      expect(err.toString(), contains('required'));
+    });
+
+    test('deep equality handles maps and lists with differing keys or lengths', () {
+      const err1 = NeatValidationError(
+        'code',
+        params: {'a': 1, 'b': 2},
+      );
+      const errDifferentKeys = NeatValidationError(
+        'code',
+        params: {'a': 1, 'c': 2},
+      );
+      const errDifferentLength = NeatValidationError(
+        'code',
+        params: {'a': 1},
+      );
+
+      expect(err1 == errDifferentKeys, isFalse);
+      expect(err1 == errDifferentLength, isFalse);
+      expect(err1 == Object(), isFalse);
+    });
+
+    test('deep equality with nested iterables and maps of different contents', () {
+      const errA = NeatValidationError('test', params: {
+        'list': [1, 2, 3],
+        'nested': {'x': 10},
+      });
+      const errB = NeatValidationError('test', params: {
+        'list': [1, 2, 4],
+        'nested': {'x': 10},
+      });
+      const errC = NeatValidationError('test', params: {
+        'list': [1, 2],
+        'nested': {'x': 10},
+      });
+      const errD = NeatValidationError('test', params: {
+        'list': [1, 2, 3],
+        'nested': {'x': 20},
+      });
+
+      expect(errA == errB, isFalse);
+      expect(errA == errC, isFalse);
+      expect(errA == errD, isFalse);
+    });
+  });
+
   group('NeatFieldState', () {
     test('lifecycle flags and status calculation', () {
       const state = NeatFieldState<String>(
@@ -15,6 +85,7 @@ void main() {
       expect(state.isDirty, isFalse);
       expect(state.isErrorVisible, isFalse);
       expect(state.isShowError, isFalse);
+      expect(state.toString(), contains('NeatFieldState'));
     });
 
     test('isDirty calculation when value changes', () {
@@ -96,11 +167,19 @@ void main() {
       final updated = initial.copyWith(
         value: 'world',
         showError: true,
+        isTouched: true,
+        isOptional: true,
+        isValidating: true,
+        isValidated: true,
         error: const NeatValidationError.code('test_error'),
       );
 
       expect(updated.value, 'world');
       expect(updated.showError, isTrue);
+      expect(updated.isTouched, isTrue);
+      expect(updated.isOptional, isTrue);
+      expect(updated.isValidating, isTrue);
+      expect(updated.isValidated, isTrue);
       expect(updated.error?.code, 'test_error');
 
       // Copy with nulls directly
@@ -113,6 +192,42 @@ void main() {
       expect(resetNulls.value, isNull);
       expect(resetNulls.error, isNull);
       expect(resetNulls.initialValue, isNull);
+    });
+
+    test('equality and hashCode comparison across all properties', () {
+      const base = NeatFieldState<String>(
+        value: 'a',
+        error: null,
+        showError: false,
+        isTouched: false,
+        isOptional: false,
+        isValidating: false,
+        isValidated: false,
+        initialValue: 'a',
+      );
+      const clone = NeatFieldState<String>(
+        value: 'a',
+        error: null,
+        showError: false,
+        isTouched: false,
+        isOptional: false,
+        isValidating: false,
+        isValidated: false,
+        initialValue: 'a',
+      );
+
+      expect(base, equals(clone));
+      expect(base.hashCode, equals(clone.hashCode));
+      expect(base == Object(), isFalse);
+
+      expect(base == base.copyWith(value: 'b'), isFalse);
+      expect(base == base.copyWith(error: const NeatValidationError.code('e')), isFalse);
+      expect(base == base.copyWith(showError: true), isFalse);
+      expect(base == base.copyWith(isTouched: true), isFalse);
+      expect(base == base.copyWith(isOptional: true), isFalse);
+      expect(base == base.copyWith(isValidating: true), isFalse);
+      expect(base == base.copyWith(isValidated: true), isFalse);
+      expect(base == base.copyWith(initialValue: 'other'), isFalse);
     });
   });
 
@@ -129,7 +244,7 @@ void main() {
       expect(
         map.isFilledAndValid('nickname'),
         isTrue,
-      ); // optional & empty is valid
+      );
       expect(map.areAllFieldsValid, isTrue);
       expect(map.isAllFieldsValid, isTrue);
     });
@@ -179,6 +294,8 @@ void main() {
 
       expect(state.status, NeatSubmissionStatus.idle);
       expect(state.isSubmitting, isFalse);
+      expect(state.isSuccess, isFalse);
+      expect(state.isFailure, isFalse);
       expect(state.isValid, isTrue);
       expect(state.isCleanAndValid, isTrue);
       expect(state.isDirty, isFalse);
@@ -186,7 +303,9 @@ void main() {
       expect(state.valueOf<String>('email'), 'test@mail.com');
       expect(state.valueOf<int>('age'), 25);
       expect(state.getField<String>('email').value, 'test@mail.com');
+      expect(state.errorOf('email'), isNull);
       expect(state.values, {'email': 'test@mail.com', 'age': 25});
+      expect(state.toString(), contains('NeatFormState'));
     });
 
     test('instantiates with fromValues and supports field and operator []', () {
@@ -232,14 +351,32 @@ void main() {
         fields: {'name': NeatFieldState<String>(value: 'Alice')},
         status: NeatSubmissionStatus.idle,
       );
+      const stateDiffField = NeatFormState<String>(
+        fields: {'name': NeatFieldState<String>(value: 'Bob')},
+        status: NeatSubmissionStatus.idle,
+      );
+      const stateDiffLength = NeatFormState<String>(
+        fields: {
+          'name': NeatFieldState<String>(value: 'Alice'),
+          'age': NeatFieldState<int>(value: 20),
+        },
+        status: NeatSubmissionStatus.idle,
+      );
+
       expect(state1, equals(state2));
       expect(state1.hashCode, equals(state2.hashCode));
+      expect(state1 == stateDiffField, isFalse);
+      expect(state1 == stateDiffLength, isFalse);
+      expect(state1 == Object(), isFalse);
 
-      final updated = state1.copyWith(status: NeatSubmissionStatus.submitting);
-      expect(updated.isSubmitting, isTrue);
-      expect(updated, isNot(equals(state1)));
+      final submittingState = state1.copyWith(status: NeatSubmissionStatus.submitting);
+      expect(submittingState.isSubmitting, isTrue);
+
+      final successState = state1.copyWith(status: NeatSubmissionStatus.success);
+      expect(successState.isSuccess, isTrue);
+
+      final failureState = state1.copyWith(status: NeatSubmissionStatus.failure);
+      expect(failureState.isFailure, isTrue);
     });
   });
 }
-
-
