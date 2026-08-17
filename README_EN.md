@@ -2,7 +2,7 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.0-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.1-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests: 125 Passed](https://img.shields.io/badge/tests-125%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
@@ -59,6 +59,13 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 
 `neat_form` cleanly decouples your application into 3 layers: **UI Layer (Headless Widgets)** ➔ **State Management Layer (Mixins & Controllers)** ➔ **Core Logic Engine**.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/architecture_en.svg" alt="Architecture & Data Flow Diagram" width="100%" />
+</p>
+
+<details>
+<summary>👁️ View Mermaid Source Diagram</summary>
+
 ```mermaid
 flowchart TD
     subgraph UI["🎨 UI Layer (Zero UI Coupling)"]
@@ -91,8 +98,16 @@ flowchart TD
     FormState -->|"Resolve error strings"| Resolver
     FormState ==>|"6. Surgical Rebuild (select / watch)"| UI
 ```
+</details>
 
-#### 2. Multi-State Management Ecosystem Compatibility
+#### 2. Multi-State Management Ecosystem Matrix
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/ecosystem_en.svg" alt="Ecosystem Matrix Diagram" width="100%" />
+</p>
+
+<details>
+<summary>👁️ View Mermaid Source Diagram</summary>
 
 ```mermaid
 graph LR
@@ -105,6 +120,7 @@ graph LR
     Core -->|ChangeNotifier| N1["Flutter Native (ListenableBuilder)"]
     Core -->|Pure State Model| O1["Signals / MobX / GetX"]
 ```
+</details>
 
 ---
 
@@ -380,6 +396,13 @@ class _LoginFormPageState extends State<LoginFormPage> {
 
 `neat_form` features a built-in 4-state state machine via `NeatSubmissionStatus`:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/lifecycle_en.svg" alt="Form Submission Lifecycle Diagram" width="100%" />
+</p>
+
+<details>
+<summary>👁️ View Mermaid Source Diagram</summary>
+
 ```mermaid
 stateDiagram-v2
     [*] --> idle : Form Initialized (Initial State)
@@ -400,6 +423,7 @@ stateDiagram-v2
     success --> idle : resetForm()
     failure --> idle : User Modifies Field / Retries
 ```
+</details>
 
 ---
 
@@ -571,6 +595,13 @@ class AppFormObserver extends NeatFormObserver<LoginFormKey> {
 
 Use `validateFieldAsync` with automatic sequence token invalidation so out-of-order network responses never corrupt newer user input:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/async_sequence_en.svg" alt="Async Validation Sequence Diagram" width="100%" />
+</p>
+
+<details>
+<summary>👁️ View Mermaid Source Diagram</summary>
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -595,6 +626,7 @@ sequenceDiagram
     Engine->>Engine: Match token: 1 != 2 (Stale Token ❌)
     Note over Engine,Field: Outdated response safely discarded! UI is never overwritten.
 ```
+</details>
 
 ```dart
 await form.validateFieldAsync<String>(

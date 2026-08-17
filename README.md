@@ -2,7 +2,7 @@
 
 Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạnh mẽ, type-safe (100% `Object?`) dành cho **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.0-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.1-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests: 125 Passed](https://img.shields.io/badge/tests-125%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
@@ -60,6 +60,13 @@ Một thư viện quản lý trạng thái form và validation gọn nhẹ, mạ
 
 `neat_form` phân tách rành mạch 3 tầng: **UI Layer (Headless Widgets)** ➔ **State Management Layer (Mixins & Controllers)** ➔ **Core Logic Engine**.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/architecture_vi.svg" alt="Sơ đồ Kiến trúc & Luồng Dữ liệu" width="100%" />
+</p>
+
+<details>
+<summary>👁️ Xem mã nguồn Mermaid Diagram</summary>
+
 ```mermaid
 flowchart TD
     subgraph UI["🎨 UI Layer (Zero UI Coupling)"]
@@ -92,8 +99,16 @@ flowchart TD
     FormState -->|"Resolve error strings"| Resolver
     FormState ==>|"6. Surgical Rebuild (select / watch)"| UI
 ```
+</details>
 
 #### 2. Tương thích Đa Nền tảng State Management
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/ecosystem_vi.svg" alt="Hệ sinh thái State Management tương thích" width="100%" />
+</p>
+
+<details>
+<summary>👁️ Xem mã nguồn Mermaid Diagram</summary>
 
 ```mermaid
 graph LR
@@ -106,6 +121,7 @@ graph LR
     Core -->|ChangeNotifier| N1["Flutter Native (ListenableBuilder)"]
     Core -->|Pure State Model| O1["Signals / MobX / GetX"]
 ```
+</details>
 
 ---
 
@@ -381,6 +397,13 @@ class _LoginFormPageState extends State<LoginFormPage> {
 
 `neat_form` tích hợp sẵn máy trạng thái (State Machine) 4 bước thông qua `NeatSubmissionStatus`:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/lifecycle_vi.svg" alt="Vòng đời nộp form" width="100%" />
+</p>
+
+<details>
+<summary>👁️ Xem mã nguồn Mermaid Diagram</summary>
+
 ```mermaid
 stateDiagram-v2
     [*] --> idle : Khởi tạo Form (Initial State)
@@ -399,8 +422,9 @@ stateDiagram-v2
     submitting --> failure : onSubmit() ném lỗi (Catch error)
 
     success --> idle : resetForm()
-    failure --> idle : Người dùng sửa dữ liệu / Thử lại
+    failure --> idle : resetForm() / User chỉnh sửa
 ```
+</details>
 
 ---
 
@@ -572,6 +596,13 @@ class AppFormObserver extends NeatFormObserver<LoginFormKey> {
 
 Sử dụng `validateFieldAsync` với cơ chế sequence token tự động vô hiệu hóa kết quả của các request cũ nếu người dùng tiếp tục gõ phím:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/async_sequence_vi.svg" alt="Sơ đồ Async Validation chống Race Condition" width="100%" />
+</p>
+
+<details>
+<summary>👁️ Xem mã nguồn Mermaid Diagram</summary>
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -596,6 +627,7 @@ sequenceDiagram
     Engine->>Engine: So khớp token: 1 != 2 (Token đã cũ / Stale ❌)
     Note over Engine,Field: Tự động hủy kết quả cũ! Giao diện không bị ghi đè sai.
 ```
+</details>
 
 ```dart
 await form.validateFieldAsync<String>(

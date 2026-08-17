@@ -1,3 +1,9 @@
+# 1.2.1
+
+- **Pub.dev Documentation Enhancement:**
+  - Embedded high-resolution vector SVG diagrams in `README.md` and `README_EN.md` for full rendering compatibility on pub.dev and mobile devices.
+  - Preserved interactive Mermaid code blocks inside expandable `<details>` sections.
+
 # 1.2.0
 
 - **Built-in Input Formatters & Masking Suite (`NeatInputFormatters`):**
