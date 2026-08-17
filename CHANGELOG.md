@@ -1,3 +1,14 @@
+# 1.2.7
+
+- **NeatForm UI Builders Suite (Scoped & Fine-Grained Reactivity):**
+  - Added `NeatFormScope<K>` and `NeatFormArrayScope<K>` inherited widgets for zero-prop dependency injection across the widget tree.
+  - Added `NeatFieldBuilder<K, T>` for fine-grained scoped reactivity, eliminating unnecessary re-renders when other fields mutate.
+  - Added `NeatFormBuilder<K>` for observing form-level properties (`isValid`, `submissionStatus`, `errorMessage`) with custom `buildWhen` predicates.
+  - Added `NeatFormArrayBuilder<K>` for dynamic array state observing and seamless CRUD actions.
+  - Added `NeatSubmitButton<K>` with automatic loading spinner, validation disabling, and controller binding.
+  - Added `field<T>` and `submissionStatus` convenient aliases.
+  - Expanded unit and widget test suite to **205 tests** with **98.53% overall coverage** and **96.21% coverage** on UI builders.
+
 # 1.2.6
 
 - **Open Source Contribution Guidelines & Templates:**

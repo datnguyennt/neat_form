@@ -310,6 +310,9 @@ class NeatFormState<K> {
   /// Current form submission lifecycle status.
   final NeatSubmissionStatus status;
 
+  /// Alias for [status].
+  NeatSubmissionStatus get submissionStatus => status;
+
   /// Type-safe retrieval of a field state.
   NeatFieldState<T> getField<T>(K key) => fields.getField<T>(key);
 

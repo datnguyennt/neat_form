@@ -2,69 +2,70 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.2.6-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.2.7-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 182 Passed](https://img.shields.io/badge/tests-182%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
+[![Tests: 205 Passed](https://img.shields.io/badge/tests-205%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
 
 > **[Tiếng Việt](README.md) | [English](README_EN.md)**
 
 ---
 
-## 🇬🇧 Overview
+## 📑 Table of Contents
+- [1. 🇬🇧 Overview](#1--overview)
+- [2. ✨ Key Features](#2--key-features)
+- [3. 🏗️ Architecture & Data Flow](#3-️-architecture--data-flow)
+- [4. 📦 Installation](#4--installation)
+- [5. 🚀 Quick Start Guide](#5--quick-start-guide)
+  - [Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)](#method-1-neatform-ui-builders-suite-70-less-boilerplate)
+  - [Method 2: Flutter Native with `ListenableBuilder`](#method-2-flutter-native-with-listenablebuilder)
+  - [Method 3: Seamless Riverpod Integration](#method-3-seamless-riverpod-integration)
+  - [Method 4: BLoC / Cubit Integration](#method-4-bloc--cubit-integration)
+- [6. ✈️ Dynamic Form Array (`NeatFormArray`)](#6-️-dynamic-form-array-neatformarray)
+- [7. 🔄 Form Submission Lifecycle](#7--form-submission-lifecycle)
+- [8. 📋 Built-in Validators (Cheat Sheet)](#8--built-in-validators-cheat-sheet)
+- [9. 🌐 Localization & Error Resolution](#9--localization--error-resolution)
+- [10. 🎨 Input Formatters & Masking (`NeatInputFormatters`)](#10--input-formatters--masking-neatinputformatters)
+- [11. 📊 Event Tracking & Analytics (`NeatFormObserver`)](#11--event-tracking--analytics-neatformobserver)
+- [12. ⚡ Race-Condition-Free Async Validation](#12--race-condition-free-async-validation)
+- [13. 📱 Showcase App](#13--showcase-app)
+- [14. 📝 License](#14--license)
+
+---
+
+## 1. 🇬🇧 Overview
 
 **`neat_form`** is built around **Headless Architecture (Zero UI Coupling)**, **State-driven**, and **Immutable** design principles. It eliminates the boilerplate and complexity of form validation in Flutter, working out-of-the-box as a standalone solution or integrating seamlessly with any state manager (Riverpod, BLoC, Cubit, Signals, MobX, etc.).
 
----
-
-### 🌐 Supported Platforms
-
-`neat_form` runs flawlessly on all Flutter-supported platforms:
-
-| Platform | Supported | Notes |
-| :--- | :---: | :--- |
-| **Android** | ✅ | All Android API versions |
-| **iOS** | ✅ | All iOS versions |
-| **Web** | ✅ | CanvasKit & HTML renderers |
-| **macOS** | ✅ | Desktop App |
-| **Windows** | ✅ | Desktop App |
-| **Linux** | ✅ | Desktop App |
+### 🌐 Supported Platforms & Requirements
+* **Platforms:** Android, iOS, Web, macOS, Windows, Linux (100% Flutter platforms).
+* **SDK:** Flutter `>= 3.0.0`, Dart `>= 3.0.0 < 4.0.0`.
+* **Zero Dependencies:** Zero external package dependencies (only Flutter SDK & `meta`), ensuring **100% freedom from dependency conflicts**.
 
 ---
 
-### ⚙️ System Requirements
+## 2. ✨ Key Features
 
-- **Flutter SDK:** `>= 3.0.0`
-- **Dart SDK:** `>= 3.0.0 < 4.0.0`
-- **Zero Third-party Dependencies:** Only depends on Flutter SDK & `meta`. Guarantees **100% No Dependency Conflicts** with any existing project.
-
----
-
-### ✨ Key Features
-
-- 🚀 **Zero UI Coupling (Headless Form):** Pure logic layer — complete freedom to bind to any UI widgets (`TextField`, custom inputs, design systems).
-- 🎯 **Native Flutter Integration:** `NeatFormController` extends `ChangeNotifier` / `Listenable` for direct reactive usage with `ListenableBuilder` or `AnimatedBuilder`.
-- 🔒 **Strict Type Safety (100% `Object?` - No `dynamic`):** Full compile-time static type checks with `NeatFieldState<T>` and `NeatValidator<T>`.
-- 🌐 **Decoupled Localization & Param Interpolation:** Validation errors produce machine-readable codes and params; `NeatErrorResolver` interpolates template placeholders like `{minLength}` and `{maxValue}`.
-- ⏱️ **Race Condition Protection in Async Validations:** Token invalidation mechanism ensures slow in-flight async requests never overwrite newer user input.
-- 🔄 **Form Submission Lifecycle:** Built-in 4-state lifecycle (`idle`, `submitting`, `success`, `failure`).
-- 🛠️ **25+ Built-in Validators:** Strings, numbers, regex, Luhn algorithm credit card, dates, booleans, and collections.
-- 🎨 **Built-in Input Formatters & Masking:** Real-time currency, credit card, custom masks, date formats, and casing utilities in pure Flutter SDK (0 external dependencies).
+* 🚀 **Zero UI Coupling (Headless Form):** Complete separation of logic and presentation. Design any custom UI without framework constraints.
+* 🧩 **UI Builders Suite (`NeatFormScope`, `NeatFieldBuilder`):** High-performance scoped widgets that only rebuild the specific field changed, cutting 70% of boilerplate.
+* 🔒 **Type-Safe Generics (100% `Object?` - No `dynamic`):** Compile-time safety using Enum keys `K`.
+* ✈️ **Dynamic Form Array:** Comprehensive support for dynamic list forms (add/remove/reorder guests, addresses, items) with `NeatFormArrayController`.
+* ⏱️ **Race Condition Prevention:** Built-in sequence tokens automatically cancel stale async validation responses.
+* 🌐 **Decoupled Localization:** Errors return `code` and `params` with automatic placeholder interpolation (`{minLength}`, `{maxValue}`).
+* 🛠️ **30+ Built-in Validators & Formatters:** Extensive collection covering strings, numbers, dates, credit cards, hex colors, and JSON.
 
 ---
 
-### 🏗️ Architecture & Workflow Diagrams
+## 3. 🏗️ Architecture & Data Flow
 
-#### 1. Data Flow & Overall Architecture (Headless Pattern)
-
-`neat_form` cleanly decouples your application into 3 layers: **UI Layer (Headless Widgets)** ➔ **State Management Layer (Mixins & Controllers)** ➔ **Core Logic Engine**.
+`neat_form` cleanly divides concerns across 3 distinct layers: **UI Layer** ➔ **State Management Layer** ➔ **Core Logic Engine**.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/architecture_en.svg" alt="Architecture & Data Flow Diagram" width="100%" />
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/architecture_en.svg" alt="Architecture Diagram" width="100%" />
 </p>
 
 <details>
-<summary>👁️ View Mermaid Source Diagram</summary>
+<summary>👁️ View Mermaid Diagram Source</summary>
 
 ```mermaid
 flowchart TD
@@ -82,11 +83,10 @@ flowchart TD
 
     subgraph CoreEngine["🧠 neat_form Core Engine"]
         direction TB
-        Validators["Validation Engine<br/>• 25+ Built-in Rules<br/>• Cross-field (match, when)<br/>• Async Token Engine"]
-        FormState["NeatFormState&lt;K&gt;<br/>• Immutable Map&lt;K, NeatFieldState&gt;<br/>• Type-Safe Generics (K Enum)"]
+        Validators["Validation Engine<br/>• 30+ Built-in Rules<br/>• Async Token Engine"]
+        FormState["NeatFormState&lt;K&gt;<br/>• Immutable Map&lt;K, NeatFieldState&gt;"]
         Lifecycle["Submission Lifecycle<br/>(idle ➔ submitting ➔ success / failure)"]
         Resolver["NeatErrorResolver<br/>(i18n & Param Interpolation)"]
-        Observer["NeatFormObserver&lt;K&gt;<br/>(Analytics & Telemetry)"]
     end
 
     Input -->|"1. User types (onChanged)"| StateMgmt
@@ -94,43 +94,19 @@ flowchart TD
     StateMgmt -->|"3. Execute validation"| Validators
     Validators -->|"4. Produce Immutable State"| FormState
     FormState -->|"5. Update Lifecycle"| Lifecycle
-    Lifecycle -.->|"Emit events"| Observer
-    FormState -->|"Resolve error strings"| Resolver
-    FormState ==>|"6. Surgical Rebuild (select / watch)"| UI
-```
-</details>
-
-#### 2. Multi-State Management Ecosystem Matrix
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/ecosystem_en.svg" alt="Ecosystem Matrix Diagram" width="100%" />
-</p>
-
-<details>
-<summary>👁️ View Mermaid Source Diagram</summary>
-
-```mermaid
-graph LR
-    Core["neat_form Core"]
-    
-    Core -->|1 Mixin| R1["Riverpod Notifier"]
-    Core -->|Nested Mixin| R2["Riverpod + Freezed Screen State"]
-    Core -->|Cubit Mixin| B1["BLoC / Cubit"]
-    Core -->|Nested Cubit Mixin| B2["Cubit + Freezed Screen State"]
-    Core -->|ChangeNotifier| N1["Flutter Native (ListenableBuilder)"]
-    Core -->|Pure State Model| O1["Signals / MobX / GetX"]
+    FormState ==>|"6. Scoped Rebuild (NeatFieldBuilder)"| UI
 ```
 </details>
 
 ---
 
-### 📦 Installation
+## 4. 📦 Installation
 
 Add `neat_form` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  neat_form: ^1.2.6
+  neat_form: ^1.2.7
 ```
 
 Or run:
@@ -140,199 +116,89 @@ flutter pub add neat_form
 
 ---
 
-### 🚀 Quick Start
+## 5. 🚀 Quick Start Guide
 
-#### ⚡ Approach 1: First-Class Riverpod Integration (Notifier & Freezed)
+### Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)
 
-##### A. Standalone Form State (Ultra-Clean Single Mixin)
-Leverage `NeatFormNotifierMixin<K>` — **only 1 mixin required**, zero boilerplate methods:
+The UI Builders Suite provides scoped reactivity (only re-rendering the specific input being edited) and automatic controller resolution via `BuildContext`:
 
 ```dart
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:neat_form/neat_form.dart';
-
 enum LoginFormKey { email, password }
 
-// 1. Ultra-clean Notifier: Exactly 1 mixin, ZERO boilerplate!
-class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>>
-    with NeatFormNotifierMixin<LoginFormKey> {
-  @override
-  NeatFormState<LoginFormKey> build() => NeatFormState.fromValues({
-        LoginFormKey.email: '',
-        LoginFormKey.password: '',
-      });
+class ModernLoginForm extends StatelessWidget {
+  final _form = NeatFormController<LoginFormKey>.fromValues(
+    initialValues: {LoginFormKey.email: '', LoginFormKey.password: ''},
+    validators: {
+      LoginFormKey.email: NeatValidators.email(),
+      LoginFormKey.password: NeatValidators.minLength(6),
+    },
+  );
 
   @override
-  Map<LoginFormKey, NeatValidator<Object?>> get validators => {
-        LoginFormKey.email: NeatValidators.combine([
-          NeatValidators.required(message: 'Email is required'),
-          NeatValidators.email(message: 'Invalid email address'),
-        ]),
-        LoginFormKey.password: NeatValidators.combine([
-          NeatValidators.required(message: 'Password is required'),
-          NeatValidators.minLength(8, message: 'Must be at least 8 characters'),
-        ]),
-      };
-}
+  Widget build(BuildContext context) {
+    return NeatFormScope<LoginFormKey>(
+      controller: _form,
+      child: Column(
+        children: [
+          // 1. Auto-resolves controller from scope & ONLY rebuilds when email changes!
+          NeatFieldBuilder<LoginFormKey, String>(
+            field: LoginFormKey.email,
+            builder: (context, fieldState, controller) => TextField(
+              onChanged: (val) => controller.setField(LoginFormKey.email, val),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                errorText: fieldState.errorMessage,
+              ),
+            ),
+          ),
 
-final loginNotifierProvider =
-    NotifierProvider<LoginNotifier, NeatFormState<LoginFormKey>>(LoginNotifier.new);
+          // 2. Password
+          NeatFieldBuilder<LoginFormKey, String>(
+            field: LoginFormKey.password,
+            builder: (context, fieldState, controller) => TextField(
+              obscureText: true,
+              onChanged: (val) => controller.setField(LoginFormKey.password, val),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                errorText: fieldState.errorMessage,
+              ),
+            ),
+          ),
 
-// 2. UI with Surgical Rebuilding (Only the changed input rebuilds)
-class EmailInput extends ConsumerWidget {
-  const EmailInput({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final email = ref.watch(
-      loginNotifierProvider.select((s) => s.field<String>(LoginFormKey.email)),
-    );
-
-    return TextField(
-      onChanged: (val) => ref.read(loginNotifierProvider.notifier).setField(LoginFormKey.email, val),
-      decoration: InputDecoration(
-        labelText: 'Email',
-        errorText: email.errorMessage, // ✨ Directly binds error message if visible
+          // 3. Submit button with automatic loading spinner & disable logic
+          NeatSubmitButton<LoginFormKey>(
+            onPressed: (controller) async {
+              await controller.submitForm(
+                onSubmit: (values) async => print('Login success: $values'),
+              );
+            },
+            child: const Text('Login'),
+          ),
+        ],
       ),
     );
   }
 }
 ```
 
-##### B. Nested / Freezed Screen State (When Form is part of Screen State)
-If your screen uses a **Freezed** data class (`LoginScreenState` containing the form plus other screen properties), use `NeatNestedFormNotifierMixin<S, K>`:
-
-```dart
-// 1. Define Freezed Screen State
-@freezed
-class LoginScreenState with _$LoginScreenState {
-  const factory LoginScreenState({
-    @Default(false) bool isSubmitting,
-    @Default(false) bool rememberMe,
-    String? serverError,
-    required NeatFormState<LoginFormKey> form,
-  }) = _LoginScreenState;
-}
-
-// 2. Notifier managing nested form state seamlessly
-class LoginScreenNotifier extends Notifier<LoginScreenState>
-    with NeatNestedFormNotifierMixin<LoginScreenState, LoginFormKey> {
-  @override
-  LoginScreenState build() => LoginScreenState(
-        form: NeatFormState.fromValues({
-          LoginFormKey.email: '',
-          LoginFormKey.password: '',
-        }),
-      );
-
-  @override
-  NeatFormState<LoginFormKey> getForm(LoginScreenState state) => state.form;
-
-  @override
-  LoginScreenState updateForm(LoginScreenState state, NeatFormState<LoginFormKey> form) =>
-      state.copyWith(form: form);
-
-  @override
-  Map<LoginFormKey, NeatValidator<Object?>> get validators => { ... };
-}
-```
-
 ---
 
-#### ⚡ Approach 2: BLoC / Cubit (Standalone & Freezed Support)
+### Method 2: Flutter Native with `ListenableBuilder`
 
-##### A. Standalone Cubit Form (Auto-wires `emit()`)
-Use `NeatFormCubitMixin<K>` — no manual state mapping or boilerplate methods:
-
-```dart
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:neat_form/neat_form.dart';
-
-enum ProfileKey { name, age }
-
-class ProfileCubit extends Cubit<NeatFormState<ProfileKey>>
-    with NeatFormCubitMixin<ProfileKey> {
-  ProfileCubit()
-      : super(
-          NeatFormState.fromValues({
-            ProfileKey.name: '',
-            ProfileKey.age: null,
-          }),
-        );
-
-  @override
-  Map<ProfileKey, NeatValidator<Object?>> get validators => {
-        ProfileKey.name: NeatValidators.required(message: 'Name is required'),
-        ProfileKey.age: NeatValidators.combine([
-          NeatValidators.required(),
-          NeatValidators.minValue(18, message: 'Must be 18+'),
-        ]),
-      };
-
-  void onNameChanged(String val) => setAndValidateField(ProfileKey.name, val);
-  void onAgeChanged(int? val) => setAndValidateField(ProfileKey.age, val);
-}
-```
-
-##### B. Cubit with Freezed Screen State
-Use `NeatNestedFormCubitMixin<S, K>` when Cubit manages a Freezed parent state:
+For manual widget lifecycle management:
 
 ```dart
-class ProfileCubit extends Cubit<ProfileScreenState>
-    with NeatNestedFormCubitMixin<ProfileScreenState, ProfileKey> {
-  ProfileCubit() : super(ProfileScreenState(form: NeatFormState.fromValues({ ... })));
-
-  @override
-  NeatFormState<ProfileKey> getForm(ProfileScreenState state) => state.form;
-
-  @override
-  ProfileScreenState updateForm(ProfileScreenState state, NeatFormState<ProfileKey> form) =>
-      state.copyWith(form: form);
-
-  @override
-  Map<ProfileKey, NeatValidator<Object?>> get validators => { ... };
-}
-```
-
----
-
-#### ⚡ Approach 3: Flutter Native with `ListenableBuilder` (No external state manager)
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:neat_form/neat_form.dart';
-
-enum LoginFormKey { email, password }
-
-class LoginFormPage extends StatefulWidget {
-  const LoginFormPage({super.key});
-
-  @override
-  State<LoginFormPage> createState() => _LoginFormPageState();
-}
-
-class _LoginFormPageState extends State<LoginFormPage> {
+class NativeLoginFormState extends State<NativeLoginForm> {
   late final NeatFormController<LoginFormKey> _form;
 
   @override
   void initState() {
     super.initState();
-    _form = NeatFormController<LoginFormKey>(
-      initialFields: {
-        LoginFormKey.email: const NeatFieldState<String>(value: ''),
-        LoginFormKey.password: const NeatFieldState<String>(value: ''),
-      },
+    _form = NeatFormController<LoginFormKey>.fromValues(
+      initialValues: {LoginFormKey.email: '', LoginFormKey.password: ''},
       validators: {
-        LoginFormKey.email: NeatValidators.combine([
-          NeatValidators.required(message: 'Email is required'),
-          NeatValidators.email(message: 'Invalid email format'),
-        ]),
-        LoginFormKey.password: NeatValidators.combine([
-          NeatValidators.required(message: 'Password is required'),
-          NeatValidators.minLength(8, message: 'Must be at least {minLength} characters'),
-          NeatValidators.passwordStrength(message: 'Must include uppercase, lowercase, digit & symbol'),
-        ]),
+        LoginFormKey.email: NeatValidators.email(),
+        LoginFormKey.password: NeatValidators.minLength(6),
       },
     );
   }
@@ -348,36 +214,24 @@ class _LoginFormPageState extends State<LoginFormPage> {
     return ListenableBuilder(
       listenable: _form,
       builder: (context, _) {
-        final emailField = _form.getField<String>(LoginFormKey.email);
-        final passwordField = _form.getField<String>(LoginFormKey.password);
+        final email = _form.getField<String>(LoginFormKey.email);
+        final password = _form.getField<String>(LoginFormKey.password);
 
         return Column(
           children: [
             TextField(
               onChanged: (val) => _form.setField(LoginFormKey.email, val),
-              decoration: InputDecoration(
-                labelText: 'Email',
-                errorText: emailField.errorMessage,
-              ),
+              decoration: InputDecoration(labelText: 'Email', errorText: email.errorMessage),
             ),
             TextField(
               obscureText: true,
               onChanged: (val) => _form.setField(LoginFormKey.password, val),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                errorText: passwordField.errorMessage,
-              ),
+              decoration: InputDecoration(labelText: 'Password', errorText: password.errorMessage),
             ),
             ElevatedButton(
               onPressed: _form.submissionStatus.isSubmitting
                   ? null
-                  : () async {
-                      await _form.submitForm(
-                        onSubmit: (values) async {
-                          print('Valid form values: $values');
-                        },
-                      );
-                    },
+                  : () => _form.submitForm(onSubmit: (v) async => print('Values: $v')),
               child: _form.submissionStatus.isSubmitting
                   ? const CircularProgressIndicator()
                   : const Text('Login'),
@@ -392,370 +246,210 @@ class _LoginFormPageState extends State<LoginFormPage> {
 
 ---
 
-### 🔄 Form Submission Lifecycle
+### Method 3: Seamless Riverpod Integration
 
-`neat_form` features a built-in 4-state state machine via `NeatSubmissionStatus`:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/lifecycle_en.svg" alt="Form Submission Lifecycle Diagram" width="100%" />
-</p>
-
-<details>
-<summary>👁️ View Mermaid Source Diagram</summary>
-
-```mermaid
-stateDiagram-v2
-    [*] --> idle : Form Initialized (Initial State)
-
-    idle --> validating : User Triggers Submit (submitForm)
-    
-    state validating <<choice>>
-    validating --> idle : Form Has Errors (showError = true)
-    validating --> submitting : All Fields Valid
-
-    state submitting {
-        [*] --> executing_callback : Execute onSubmit(values)
-    }
-
-    submitting --> success : onSubmit() Completed Successfully
-    submitting --> failure : onSubmit() Threw Exception / Error
-
-    success --> idle : resetForm()
-    failure --> idle : User Modifies Field / Retries
-```
-</details>
-
----
-
-### 📋 Built-in Validators Cheat Sheet
-
-| Category | Validator | Description |
-| :--- | :--- | :--- |
-| **Required & Strings** | `required()` | Field must not be null or empty |
-| | `notBlank()` | String must not be purely whitespace |
-| | `exactLength(n)` | String must have exact length of $n$ chars |
-| | `minLength(n)` | Minimum string length |
-| | `maxLength(n)` | Maximum string length |
-| | `lengthRange(min, max)` | Length within range $[min, max]$ |
-| | `startsWith(prefix)` | String starts with specified prefix |
-| | `endsWith(suffix)` | String ends with specified suffix |
-| | `contains(sub)` / `notContains(sub)` | Substring inclusion / exclusion |
-| | `latinOnly()` | Unaccented Latin characters and spaces only |
-| | `noEmoji()` | Disallows Emoji characters |
-| **Format & Security** | `email()` | Standard international email format |
-| | `phone()` | Phone number (8-15 digits, optional `+`) |
-| | `passwordStrength()` | Enforces uppercase, lowercase, digits, symbols |
-| | `creditCard()` | Credit card validation using Luhn Algorithm |
-| | `url()` | HTTP/HTTPS web address format |
-| | `numeric()` | Integer or decimal string |
-| | `alphanumericOnly()` | Letters and digits only |
-| | `noSpecialChars()` | No special symbol characters |
-| | `noSpaces()` / `noLeadingTrailingSpaces()` | No spaces / no outer whitespace |
-| | `blacklist(words)` | Disallows forbidden keywords |
-| | `noHtml()` | Disallows HTML / script tags (anti-XSS) |
-| **Numeric** | `minValue(n)` / `maxValue(n)` | Minimum / maximum numeric value |
-| | `positive()` / `negative()` | Strictly positive ($>0$) or negative ($<0$) |
-| | `multipleOf(step)` | Number must be divisible by step |
-| | `decimalPrecision(maxDec)` | Maximum decimal places allowed |
-| **DateTime** | `pastDate()` | Date must be in the past |
-| | `futureDate()` | Date must be in the future |
-| | `dateRange(min, max)` | Date within range $[min, max]$ |
-| **Consent & Booleans**| `mustBeTrue()` | Must be true (e.g. Terms acceptance) |
-| | `mustBeFalse()` | Must be false |
-| **Collections** | `minItems(n)` / `maxItems(n)` | Minimum / maximum number of items |
-| | `uniqueItems()` | Disallows duplicate items in list |
-| **Logic & Combinators** | `match(targetGetter)` | Matches another field value (confirm password) |
-| | `when(condition, validator)` | Conditional validation rule (`requiredIf`) |
-| | `combine([v1, v2, ...])` | Combines multiple validators into one |
-| | `custom(predicate)` | Creates quick custom predicate validator |
-
----
-
-### 🌐 Localization & Error Resolver
-
-`neat_form` decouples UI presentation from validation logic:
+Use `NeatFormNotifierMixin` within a Riverpod `Notifier`:
 
 ```dart
-final resolver = NeatErrorResolver<BuildContext>();
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:neat_form/neat_form.dart';
 
-// Register handler
-resolver.register(
-  NeatValidators.codeMinLength,
-  (context, params, fieldName) {
-    return '$fieldName must be at least ${params["minLength"]} characters';
-  },
-);
+final loginProvider = NotifierProvider<LoginNotifier, NeatFormState<LoginFormKey>>(LoginNotifier.new);
 
-// Resolve in UI
-final errorText = resolver.resolve(context, fieldState.error!, fieldName: 'Password');
-```
-
----
-
-### 🎨 Built-in Input Formatters & Masking (`NeatInputFormatters`)
-
-`neat_form` provides a comprehensive suite of pure Flutter `TextInputFormatter` utilities (0 external dependencies) with accurate cursor preservation:
-
-#### 1. Real-Time Currency Formatter (`currency`)
-```dart
-final currencyFormatter = NeatInputFormatters.currency(
-  thousandSeparator: ',',
-  decimalSeparator: '.',
-  prefix: r'$',
-  allowDecimals: true,
-);
-
-TextField(
-  keyboardType: TextInputType.number,
-  inputFormatters: [currencyFormatter],
-  onChanged: (val) {
-    // Extract raw numeric value (num / double / int) for form state
-    final amount = currencyFormatter.getNumericValue(val);
-    form.setField(PaymentKey.amount, amount);
-  },
-);
-```
-
-#### 2. Payment Card Formatter (`creditCard`)
-Auto-detects card brand (Visa, Mastercard, Amex, JCB, Discover) and applies 4-4-4-4 or 4-6-5 grouping:
-```dart
-TextField(
-  keyboardType: TextInputType.number,
-  inputFormatters: [NeatInputFormatters.creditCard()],
-  onChanged: (val) => form.setField(
-    PaymentKey.cardNumber,
-    NeatCardFormatter.getCleanCardNumber(val), // '4111222233334444'
-  ),
-);
-```
-
-#### 3. Custom Mask Formatter (`mask`)
-```dart
-final phoneFormatter = NeatInputFormatters.mask('(###) ###-####');
-
-TextField(
-  keyboardType: TextInputType.phone,
-  inputFormatters: [phoneFormatter],
-  onChanged: (val) => form.setField(
-    RegisterKey.phone,
-    phoneFormatter.getUnmaskedText(val), // '0901234567'
-  ),
-);
-```
-
-#### 4. Date Formatter (`date`)
-```dart
-TextField(
-  keyboardType: TextInputType.number,
-  inputFormatters: [
-    NeatInputFormatters.date(format: NeatDateFormat.ddMMyyyy),
-  ],
-);
-```
-
-#### 5. Utility Text Formatters
-- `NeatInputFormatters.uppercase()`: Auto-capitalizes input (promo codes, license plates).
-- `NeatInputFormatters.lowercase()`: Auto-lowercases input (usernames, email handles).
-- `NeatInputFormatters.latinOnly()`: Permits only ASCII/latin characters `[a-zA-Z0-9_]`.
-- `NeatInputFormatters.noSpaces()`: Denies all whitespace characters.
-
----
-
-### ✈️ Dynamic Form Array (`NeatFormArray`) — Dynamic Multi-Item Forms
-
-Easily manage dynamic lists of sub-forms (flight passengers, multiple shipping addresses, invoice line items) with **Stable Unique IDs** to eliminate Flutter widget focus hopping during deletions:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/form_array_en.svg" alt="Dynamic Form Array Architecture Diagram" width="100%" />
-</p>
-
-<details>
-<summary>👁️ View Mermaid Source Diagram</summary>
-
-```mermaid
-flowchart TD
-    subgraph ArrayState["📦 NeatFormArrayState<K> (Array State Container)"]
-        direction TB
-        Meta["• length, isEmpty, isNotEmpty<br/>• isValid, isDirty, isErrorVisible<br/>• Array-Level Rules: minItems, maxItems, uniqueBy"]
-        
-        subgraph Items["List<NeatFormArrayItem<K>>"]
-            Item1["Item #1 (id: 'item_1') ➔ Key: ValueKey('item_1')<br/>NeatFormState<K> { name, passport, seat }"]
-            Item2["Item #2 (id: 'item_2') ➔ Key: ValueKey('item_2')<br/>NeatFormState<K> { name, passport, seat }"]
-            ItemN["Item #N (id: 'item_N') ➔ Key: ValueKey('item_N')<br/>NeatFormState<K> { name, passport, seat }"]
-        end
-    end
-
-    subgraph Operations["⚡ Immutable CRUD Operations"]
-        direction LR
-        Op1["addItem(initialValues)"]
-        Op2["insertItem(index, initialValues)"]
-        Op3["removeItemAt(index) / removeItemById(id)"]
-        Op4["moveItem(from, to)"]
-        Op5["setArrayField(index, key, val)"]
-        Op6["validateArray() & submitForm()"]
-    end
-
-    Operations -->|"Produces New Immutable State (Zero Focus Jump)"| ArrayState
-```
-</details>
-
-```dart
-// 1. Declare item enum fields
-enum PassengerField { fullName, passportNumber, seatType }
-
-// 2. Instantiate Array Controller
-final passengerArray = NeatFormArrayController<PassengerField>(
-  initialItems: [
-    {PassengerField.fullName: 'Nguyen Van A', PassengerField.passportNumber: 'B1234567'},
-  ],
-  // Template validators applied to each item
-  itemValidators: {
-    PassengerField.fullName: NeatValidators.required(message: 'Name is required'),
-    PassengerField.passportNumber: NeatValidators.combine([
-      NeatValidators.required(message: 'Passport number is required'),
-      NeatValidators.alphanumericOnly(message: 'Must be alphanumeric'),
-    ]),
-  },
-  // Array-level validators
-  arrayValidators: [
-    NeatArrayValidators.minItems(1, message: 'At least 1 passenger is required'),
-    NeatArrayValidators.maxItems(5, message: 'Maximum 5 passengers allowed'),
-    NeatArrayValidators.uniqueBy<PassengerField, String>(
-      (form) => form.valueOf<String>(PassengerField.passportNumber),
-      message: 'Passport numbers must be unique across all passengers',
-    ),
-  ],
-);
-
-// 3. Declarative Flutter UI (Use item.id as ValueKey for 100% stable focus)
-ListenableBuilder(
-  listenable: passengerArray,
-  builder: (context, _) {
-    return Column(
-      children: [
-        ...passengerArray.items.asMap().entries.map((entry) {
-          final index = entry.key;
-          final item = entry.value;
-          final form = item.form;
-
-          return Card(
-            key: ValueKey(item.id), // ✨ NEVER hops focus on insert/delete!
-            child: ListTile(
-              title: TextField(
-                onChanged: (v) => passengerArray.setArrayField(index, PassengerField.fullName, v),
-                decoration: InputDecoration(
-                  labelText: 'Passenger #${index + 1} Name',
-                  errorText: form.field(PassengerField.fullName).errorMessage,
-                ),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => passengerArray.removeItemAt(index),
-              ),
-            ),
-          );
-        }),
-
-        ElevatedButton(
-          onPressed: () => passengerArray.addItem({PassengerField.fullName: ''}),
-          child: const Text('+ Add Passenger'),
-        ),
-      ],
-    );
-  },
-);
-```
-
-#### Supported `NeatFormArray` Operations:
-- `addItem(initialValues)`: Appends a new sub-form item to the list.
-- `insertItem(index, initialValues)`: Inserts a sub-form at `index`.
-- `removeItemAt(index)` / `removeItemById(id)`: Safely removes a sub-form item.
-- `moveItem(fromIndex, toIndex)`: Reorders items (designed for `ReorderableListView`).
-- `setArrayField(itemIndex, key, value)`: Mutates a specific item's field.
-- `validateArray()`: Simultaneously validates all sub-forms and array constraints (`minItems`, `maxItems`, `uniqueBy`).
-- `submitForm(onSubmit: (values) async { ... })`: Extracts submitted values as `List<Map<K, Object?>>`.
-- Full mixin support for Riverpod (`NeatFormArrayNotifierMixin`) and BLoC (`NeatFormArrayCubitMixin`).
-
----
-
-### 📊 Event Monitoring & Telemetry (Form Observer)
-
-`neat_form` provides `NeatFormObserver<K>` to track the entire form lifecycle, field updates, validation errors, and submission status — ideal for telemetry, analytics, and debugging:
-
-```dart
-class AppFormObserver extends NeatFormObserver<LoginFormKey> {
+class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>> with NeatFormNotifierMixin<LoginFormKey> {
   @override
-  void onFieldChanged(LoginFormKey key, Object? value) {
-    debugPrint('Field [${key.name}] changed to: $value');
+  NeatFormState<LoginFormKey> build() {
+    return NeatFormState.fromValues({
+      LoginFormKey.email: '',
+      LoginFormKey.password: '',
+    });
   }
 
   @override
-  void onValidationError(LoginFormKey key, NeatValidationError error) {
-    debugPrint('Validation error on [${key.name}]: ${error.code}');
-  }
+  Map<LoginFormKey, NeatValidator<Object?>> get validators => {
+        LoginFormKey.email: NeatValidators.email(),
+        LoginFormKey.password: NeatValidators.minLength(6),
+      };
 
-  @override
-  void onSubmissionStatusChanged(NeatSubmissionStatus status) {
-    debugPrint('Form submission status: ${status.name}');
-  }
-
-  @override
-  void onFormSubmitted(Map<LoginFormKey, Object?> values, {required bool isValid}) {
-    debugPrint('Form submitted: isValid=$isValid, values=$values');
+  Future<void> submit() async {
+    await submitForm(onSubmit: (values) async {
+      print('Logged in: $values');
+    });
   }
 }
 ```
 
 ---
 
-### ⚡ Async Validation with Race-Condition Protection
+### Method 4: BLoC / Cubit Integration
 
-Use `validateFieldAsync` with automatic sequence token invalidation so out-of-order network responses never corrupt newer user input:
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/async_sequence_en.svg" alt="Async Validation Sequence Diagram" width="100%" />
-</p>
-
-<details>
-<summary>👁️ View Mermaid Source Diagram</summary>
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User (Typing)
-    participant Field as NeatForm / FieldState
-    participant Engine as Async Token Engine
-    participant API as Backend Server / API
-
-    User->>Field: Types "alex" (Request 1)
-    Field->>Engine: validateFieldAsync("alex", token = 1)
-    Engine->>API: HTTP Check "alex" (Slow network: 500ms)
-
-    User->>Field: Types "alexander" (Request 2)
-    Field->>Engine: validateFieldAsync("alexander", token = 2)
-    Engine->>API: HTTP Check "alexander" (Fast network: 100ms)
-
-    API-->>Engine: Response for token = 2 (Valid)
-    Engine->>Engine: Match token: 2 == 2 (Current Token ✅)
-    Engine->>Field: Update FieldState (Valid!)
-
-    API-->>Engine: Response for token = 1 (Username taken)
-    Engine->>Engine: Match token: 1 != 2 (Stale Token ❌)
-    Note over Engine,Field: Outdated response safely discarded! UI is never overwritten.
-```
-</details>
+Use `NeatFormCubitMixin`:
 
 ```dart
-await form.validateFieldAsync<String>(
-  SignupFormKey.username,
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:neat_form/neat_form.dart';
+
+class LoginCubit extends Cubit<NeatFormState<LoginFormKey>> with NeatFormCubitMixin<LoginFormKey> {
+  LoginCubit()
+      : super(NeatFormState.fromValues({
+          LoginFormKey.email: '',
+          LoginFormKey.password: '',
+        }));
+
+  @override
+  Map<LoginFormKey, NeatValidator<Object?>> get validators => {
+        LoginFormKey.email: NeatValidators.email(),
+        LoginFormKey.password: NeatValidators.minLength(6),
+      };
+
+  Future<void> login() async {
+    await submitForm(onSubmit: (values) async {
+      print('BLoC login: $values');
+    });
+  }
+}
+```
+
+---
+
+## 6. ✈️ Dynamic Form Array (`NeatFormArray`)
+
+Effortlessly manage dynamic lists of sub-forms (e.g. guests, shipping addresses, order items) with isolated IDs and validation:
+
+```dart
+enum GuestField { fullName, dateOfBirth, passportNo }
+
+final guestsController = NeatFormArrayController<GuestField>(
+  initialItems: [
+    {GuestField.fullName: 'John Doe', GuestField.dateOfBirth: '15/08/1995', GuestField.passportNo: 'B1234567'},
+  ],
+  itemValidators: {
+    GuestField.fullName: NeatValidators.required(),
+    GuestField.dateOfBirth: NeatValidators.dateString(format: 'DD/MM/YYYY', minAge: 18),
+    GuestField.passportNo: NeatValidators.required(),
+  },
+  arrayValidators: [
+    NeatArrayValidators.minItems(1, message: 'At least 1 guest is required'),
+    NeatArrayValidators.uniqueBy(GuestField.passportNo, message: 'Passport numbers must be unique'),
+  ],
+);
+
+// Convenient CRUD helpers:
+guestsController.addItem();             // Add a new blank item
+guestsController.removeItemAt(0);       // Remove item by index
+guestsController.reorderItem(0, 2);     // Reorder item (perfect for ReorderableListView)
+```
+
+---
+
+## 7. 🔄 Form Submission Lifecycle
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/datnguyennt/neat_form/main/doc/diagrams/lifecycle_en.svg" alt="Form Submission Lifecycle Diagram" width="100%" />
+</p>
+
+`NeatSubmissionStatus` provides 4 discrete states:
+* `idle`: Initial state or reset state.
+* `submitting`: Async submission in progress (display loading spinner).
+* `success`: Submission completed successfully.
+* `failure`: Submission failed with errors.
+
+---
+
+## 8. 📋 Built-in Validators (Cheat Sheet)
+
+| Category | Validator | Description |
+| :--- | :--- | :--- |
+| **Basic** | `required()` | Mandatory non-empty input (string, num, list, map) |
+| | `custom(predicate)` | Custom boolean predicate validation |
+| **Strings** | `minLength(min)`, `maxLength(max)` | String length boundary constraints |
+| | `exactLength(len)` | Exact character count constraint |
+| | `email()`, `url()`, `phone()` | Email address, valid URL, Phone number |
+| | `alpha()`, `numeric()`, `alphanumeric()` | Alphabetic, numeric, or alphanumeric characters |
+| | `noWhitespace()`, `noHtml()` | Rejects whitespace or HTML tags |
+| **Numeric** | `minValue(min)`, `maxValue(max)` | Min/max numerical boundary (supports num & string) |
+| | `valueRange(min, max)` / `between` | Value must fall within `[min, max]` |
+| | `positive()`, `negative()` | Positive ($> 0$), negative ($< 0$) |
+| | `nonNegative()`, `nonPositive()` | Non-negative ($\ge 0$), non-positive ($\le 0$) |
+| | `integerOnly()` | Rejects floating point numbers |
+| **Date, Time & Card** | `dateString(format, minAge, maxAge)` | Calendar date validation with leap year & age bounds |
+| | `timeString(format)` | 24-hour time format (`HH:mm` or `HH:mm:ss`) |
+| | `creditCardExpiry()` | Credit card expiration (`MM/YY` or `MM/YYYY`) |
+| **Network & Formats** | `ipv4()`, `ipv6()`, `ipAddress()` | Valid IP addresses |
+| | `uuid()` | UUID/GUID v4 strings |
+| | `hexColor()` | Hex color strings `#RGB`, `#RRGGBB` |
+| | `jsonString()` | Valid JSON syntax |
+| **Collections** | `oneOf(allowed)`, `noneOf(forbidden)` | Value inclusion / exclusion checks |
+| **Cross-Field** | `match(targetKey)` | Match another field value (e.g. Confirm Password) |
+| | `when(condition, validator)` | Conditional validation |
+| **Dynamic Array** | `minItems(min)`, `maxItems(max)` | Array item count constraints |
+| | `uniqueBy(fieldKey)` | Enforce distinct values across list items |
+
+---
+
+## 9. 🌐 Localization & Error Resolution
+
+Easily translate error codes into localized strings with automatic parameter interpolation:
+
+```dart
+final errorResolver = NeatErrorResolver(
+  customHandlers: {
+    NeatValidators.codeMinLength: (error) => 'Minimum ${error.params['minLength']} characters required',
+  },
+  fallbackResolver: (error) => 'Invalid input',
+);
+
+print(errorResolver.resolve(fieldState.error!));
+```
+
+---
+
+## 10. 🎨 Input Formatters & Masking (`NeatInputFormatters`)
+
+Real-time input formatting as the user types:
+
+```dart
+// 1. Currency (USD / VND)
+TextField(inputFormatters: [NeatInputFormatters.currency(symbol: '\$', decimalDigits: 2)])
+
+// 2. Credit Card (automatic 4-digit chunking)
+TextField(inputFormatters: [NeatInputFormatters.creditCard()])
+
+// 3. String Masking
+TextField(inputFormatters: [NeatInputFormatters.mask('####-####-####')])
+
+// 4. Uppercase & No Spaces
+TextField(inputFormatters: [NeatInputFormatters.uppercase(), NeatInputFormatters.noSpaces()])
+```
+
+---
+
+## 11. 📊 Event Tracking & Analytics (`NeatFormObserver`)
+
+Monitor all form events for logging, analytics, or debugging:
+
+```dart
+class AppFormObserver<K> extends NeatFormObserver<K> {
+  @override
+  void onFieldChanged(K key, Object? value) => print('Field $key changed to $value');
+
+  @override
+  void onValidationError(K key, NeatValidationError error) => print('Error on $key: ${error.code}');
+}
+```
+
+---
+
+## 12. ⚡ Race-Condition-Free Async Validation
+
+Automatically cancels obsolete validation requests when the user continues typing:
+
+```dart
+await formController.validateFieldAsync(
+  LoginFormKey.username,
   (username) async {
-    final isTaken = await api.checkUsernameTaken(username);
-    if (isTaken) {
-      return const NeatValidationError(
-        'username_taken',
-        message: 'Username is already taken',
-      );
-    }
+    final isTaken = await api.checkUsername(username);
+    if (isTaken) return const NeatValidationError('username_taken', message: 'Username is already in use');
     return null;
   },
 );
@@ -763,37 +457,17 @@ await form.validateFieldAsync<String>(
 
 ---
 
-### ⚠️ Limitations & FAQ
+## 13. 📱 Showcase App
 
-#### 1. Does neat_form provide pre-built UI widgets like `NeatTextField`?
-> **No.** `neat_form` follows the **Headless Form** philosophy. It manages state and logic, giving you 100% freedom to use standard `TextField`, `TextFormField`, or your team's custom UI design system.
+Explore the complete multi-tab showcase application in the [`example/`](example) directory:
 
-#### 2. How do I validate a Multi-step / Wizard Form?
-> Simply pass the subset of keys for the active step:
-> ```dart
-> final isStep1Valid = form.validateForm([StepKey.email, StepKey.phone]);
-> ```
-
-#### 3. How does async validation handle fast typing?
-> `neat_form` includes built-in **Race Condition Tokens** so that obsolete in-flight requests are automatically discarded. Combine it with a simple `Timer` debounce as demonstrated in `example/lib/main.dart`.
-
----
-
-### 📱 Flutter Showcase App
-
-A complete multi-platform demo application is available inside the `example/` directory. Features 4 interactive tabs plus a dedicated **Full Demo Screen (`DynamicCheckoutShowcaseScreen`)** showcasing:
-- **Dynamic Flight Passenger Booking**: Dynamic add/remove passengers with duplicate passport detection (`NeatArrayValidators.uniqueBy`).
-- **Fintech & Card Formatting**: Auto 4-4-4-4 card spacing, `MM/YY` expiration mask, CVV mask, currency formatting, and uppercase promo codes.
-- **Live State Telemetry**: Real-time reactive JSON viewer and form validity badges.
-
-Run the example app:
 ```bash
 cd example
-flutter run -d chrome # or -d ios, -d android, -d macos
+flutter run -d chrome
 ```
 
 ---
 
-## 📝 License
+## 14. 📝 License
 
-Released under the [MIT License](LICENSE).
+Released under the **MIT License**. Free for personal and commercial projects.

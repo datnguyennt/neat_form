@@ -374,6 +374,9 @@ mixin NeatFormMixin<K> {
   NeatFieldState<T> getField<T>(K key) =>
       _NeatFormEngine.getField<T, K>(fields, key);
 
+  /// Concise alias for [getField].
+  NeatFieldState<T> field<T>(K key) => getField<T>(key);
+
   /// Updates a field's value, optionally clears error, and flags touch.
   void setField<T>(
     K key,
@@ -740,6 +743,9 @@ mixin NeatNestedFormNotifierMixin<S, K> {
   /// Retrieves a field state by key with strict type safety.
   NeatFieldState<T> getField<T>(K key) =>
       _NeatFormEngine.getField<T, K>(fields, key);
+
+  /// Concise alias for [getField].
+  NeatFieldState<T> field<T>(K key) => getField<T>(key);
 
   /// Updates a field's value, optionally clears error, and flags touch.
   void setField<T>(

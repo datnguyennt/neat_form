@@ -4,5 +4,6 @@ library;
 export 'src/field_state.dart';
 export 'src/form_array.dart';
 export 'src/form_controller.dart';
+export 'src/form_widgets.dart';
 export 'src/input_formatters.dart';
 export 'src/validators.dart';
