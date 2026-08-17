@@ -1,6 +1,6 @@
 name: neat_form
 description: A clean, lightweight, type-safe form state management and validation library for Flutter & Dart.
-version: 1.2.1
+version: 1.2.2
 homepage: https://github.com/datnguyennt/neat_form
 repository: https://github.com/datnguyennt/neat_form
 issue_tracker: https://github.com/datnguyennt/neat_form/issues
