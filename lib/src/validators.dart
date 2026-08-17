@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:neat_form/src/field_state.dart';
 
 /// A synchronous validator function that inspects a value of type [T]
@@ -142,6 +144,42 @@ class NeatValidators {
   /// Default Error Code for HTML tags presence violation.
   static const String codeNoHtml = 'no_html';
 
+  /// Default Error Code for non-negative number requirement violation.
+  static const String codeNonNegative = 'non_negative';
+
+  /// Default Error Code for non-positive number requirement violation.
+  static const String codeNonPositive = 'non_positive';
+
+  /// Default Error Code for value range violation.
+  static const String codeValueRange = 'value_range';
+
+  /// Default Error Code for integer-only input violation.
+  static const String codeIntegerOnly = 'integer_only';
+
+  /// Default Error Code for value not in allowed set.
+  static const String codeOneOf = 'one_of';
+
+  /// Default Error Code for value in forbidden set.
+  static const String codeNoneOf = 'none_of';
+
+  /// Default Error Code for expired credit card.
+  static const String codeCreditCardExpiry = 'credit_card_expired';
+
+  /// Default Error Code for time string format or range violation.
+  static const String codeTimeString = 'time_string';
+
+  /// Default Error Code for invalid IP address.
+  static const String codeIp = 'invalid_ip';
+
+  /// Default Error Code for invalid JSON string.
+  static const String codeJson = 'invalid_json';
+
+  /// Default Error Code for invalid Hex Color string.
+  static const String codeHexColor = 'invalid_hex_color';
+
+  /// Default Error Code for invalid UUID string.
+  static const String codeUuid = 'invalid_uuid';
+
   // --- Regular Expressions ---
 
   static final RegExp _emailRegExp =
@@ -156,6 +194,24 @@ class NeatValidators {
     unicode: true,
   );
   static final RegExp _htmlTagRegExp = RegExp('<[^>]*>');
+  static final RegExp _ipv4RegExp = RegExp(
+    r'^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$',
+  );
+  static final RegExp _ipv6RegExp = RegExp(
+    r'^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$',
+  );
+  static final RegExp _uuidRegExp = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+  );
+  static final RegExp _uuidAnyVersionRegExp = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+  static final RegExp _hexColorWithHashRegExp = RegExp(
+    r'^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$',
+  );
+  static final RegExp _hexColorAnyRegExp = RegExp(
+    r'^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$',
+  );
 
   // --- Combinators ---
 
@@ -535,19 +591,31 @@ class NeatValidators {
 
   // --- Numeric Validators ---
 
-  /// Validates numeric maximum value.
+  static num? _tryExtractNum(Object? value) {
+    if (value == null) return null;
+    if (value is num) return value;
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return null;
+      return num.tryParse(trimmed);
+    }
+    return null;
+  }
+
+  /// Validates numeric maximum value (supports `num` and numeric `String`).
   static NeatValidator<Object?> maxValue(
     num max, {
     String code = codeMaxValue,
     String? message,
   }) {
     return (Object? value) {
-      if (value is! num?) return null;
       if (value == null) return null;
-      if (value > max) {
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal > max) {
         return NeatValidationError(
           code,
-          params: {'maxValue': max, 'value': max},
+          params: {'maxValue': max, 'value': numVal},
           message: message,
         );
       }
@@ -555,25 +623,57 @@ class NeatValidators {
     };
   }
 
-  /// Validates numeric minimum value.
+  /// Validates numeric minimum value (supports `num` and numeric `String`).
   static NeatValidator<Object?> minValue(
     num min, {
     String code = codeMinValue,
     String? message,
   }) {
     return (Object? value) {
-      if (value is! num?) return null;
       if (value == null) return null;
-      if (value < min) {
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal < min) {
         return NeatValidationError(
           code,
-          params: {'minValue': min, 'value': min},
+          params: {'minValue': min, 'value': numVal},
           message: message,
         );
       }
       return null;
     };
   }
+
+  /// Validates that numeric value is within [min] and [max] range (inclusive).
+  static NeatValidator<Object?> valueRange(
+    num min,
+    num max, {
+    String code = codeValueRange,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value == null) return null;
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal < min || numVal > max) {
+        return NeatValidationError(
+          code,
+          params: {'min': min, 'max': max, 'value': numVal},
+          message: message,
+        );
+      }
+      return null;
+    };
+  }
+
+  /// Alias for [valueRange].
+  static NeatValidator<Object?> between(
+    num min,
+    num max, {
+    String code = codeValueRange,
+    String? message,
+  }) =>
+      valueRange(min, max, code: code, message: message);
 
   /// Validates that numeric value is strictly positive (> 0).
   static NeatValidator<Object?> positive({
@@ -581,9 +681,10 @@ class NeatValidators {
     String? message,
   }) {
     return (Object? value) {
-      if (value is! num?) return null;
       if (value == null) return null;
-      if (value <= 0) {
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal <= 0) {
         return NeatValidationError(code, message: message);
       }
       return null;
@@ -596,10 +697,69 @@ class NeatValidators {
     String? message,
   }) {
     return (Object? value) {
-      if (value is! num?) return null;
       if (value == null) return null;
-      if (value >= 0) {
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal >= 0) {
         return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates that numeric value is non-negative (>= 0).
+  static NeatValidator<Object?> nonNegative({
+    String code = codeNonNegative,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value == null) return null;
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal < 0) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates that numeric value is non-positive (<= 0).
+  static NeatValidator<Object?> nonPositive({
+    String code = codeNonPositive,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value == null) return null;
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (numVal > 0) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates that value is an integer (no fractional decimal digits).
+  static NeatValidator<Object?> integerOnly({
+    String code = codeIntegerOnly,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value == null) return null;
+      if (value is int) return null;
+      if (value is double) {
+        if (value % 1 != 0) {
+          return NeatValidationError(code, message: message);
+        }
+        return null;
+      }
+      if (value is String) {
+        final text = value.trim();
+        if (text.isEmpty) return null;
+        final parsed = num.tryParse(text);
+        if (parsed == null || parsed % 1 != 0) {
+          return NeatValidationError(code, message: message);
+        }
       }
       return null;
     };
@@ -612,9 +772,10 @@ class NeatValidators {
     String? message,
   }) {
     return (Object? value) {
-      if (value is! num?) return null;
       if (value == null) return null;
-      if (step == 0 || (value % step) != 0) {
+      final numVal = _tryExtractNum(value);
+      if (numVal == null) return null;
+      if (step == 0 || (numVal % step) != 0) {
         return NeatValidationError(
           code,
           params: {'step': step},
@@ -869,13 +1030,15 @@ class NeatValidators {
   /// Validates that a string is a valid calendar date formatted as [format] (e.g. `DD/MM/YYYY`, `MM/DD/YYYY`, `YYYY-MM-DD`).
   ///
   /// Checks calendar validity (valid month 1-12, days 1-31, leap years, days per month)
-  /// and optional bounds ([mustBePast], [mustBeFuture], [minYear], [maxYear]).
+  /// and optional bounds ([mustBePast], [mustBeFuture], [minYear], [maxYear], [minAge], [maxAge]).
   static NeatValidator<Object?> dateString({
     String format = 'DD/MM/YYYY',
     bool mustBePast = false,
     bool mustBeFuture = false,
     int? minYear,
     int? maxYear,
+    int? minAge,
+    int? maxAge,
     String code = codeDateString,
     String? message,
   }) {
@@ -972,6 +1135,121 @@ class NeatValidators {
         );
       }
 
+      if (minAge != null) {
+        var age = now.year - parsedDate.year;
+        if (now.month < parsedDate.month ||
+            (now.month == parsedDate.month && now.day < parsedDate.day)) {
+          age--;
+        }
+        if (age < minAge) {
+          return NeatValidationError(
+            code,
+            params: {'minAge': minAge, 'actualAge': age},
+            message: message ?? 'Độ tuổi tối thiểu là $minAge tuổi',
+          );
+        }
+      }
+      if (maxAge != null) {
+        var age = now.year - parsedDate.year;
+        if (now.month < parsedDate.month ||
+            (now.month == parsedDate.month && now.day < parsedDate.day)) {
+          age--;
+        }
+        if (age > maxAge) {
+          return NeatValidationError(
+            code,
+            params: {'maxAge': maxAge, 'actualAge': age},
+            message: message ?? 'Độ tuổi tối đa là $maxAge tuổi',
+          );
+        }
+      }
+
+      return null;
+    };
+  }
+
+  /// Validates that a string is a valid 24-hour time (e.g. `HH:mm` or `HH:mm:ss`).
+  static NeatValidator<Object?> timeString({
+    String format = 'HH:mm',
+    String code = codeTimeString,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value == null) return null;
+      final text = value.toString().trim();
+      if (text.isEmpty) return null;
+
+      final parts = text.split(':');
+      final formatParts = format.split(':');
+
+      if (parts.length != formatParts.length ||
+          parts.any((p) => int.tryParse(p) == null || p.length != 2)) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Định dạng giờ không hợp lệ ($format)',
+        );
+      }
+
+      final hours = int.parse(parts[0]);
+      final minutes = int.parse(parts[1]);
+      final seconds = parts.length > 2 ? int.parse(parts[2]) : 0;
+
+      if (hours < 0 ||
+          hours > 23 ||
+          minutes < 0 ||
+          minutes > 59 ||
+          seconds < 0 ||
+          seconds > 59) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Thời gian không hợp lệ',
+        );
+      }
+
+      return null;
+    };
+  }
+
+  /// Validates that a credit card expiry string (`MM/YY` or `MM/YYYY`) is valid and not expired.
+  static NeatValidator<Object?> creditCardExpiry({
+    String code = codeCreditCardExpiry,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+
+      final clean = value.trim().replaceAll('-', '/');
+      final parts = clean.split('/');
+      if (parts.length != 2 || parts.any((p) => int.tryParse(p) == null)) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Hạn thẻ không hợp lệ (MM/YY)',
+        );
+      }
+
+      final month = int.parse(parts[0]);
+      var year = int.parse(parts[1]);
+      if (parts[1].length == 2) {
+        year += 2000;
+      }
+
+      if (month < 1 || month > 12) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Tháng hết hạn không hợp lệ (01-12)',
+        );
+      }
+
+      final now = DateTime.now();
+      final lastDayOfMonth = DateTime(year, month + 1, 0, 23, 59, 59);
+      if (lastDayOfMonth.isBefore(now)) {
+        return NeatValidationError(
+          code,
+          message: message ?? 'Thẻ đã hết hạn sử dụng',
+        );
+      }
+
       return null;
     };
   }
@@ -1004,7 +1282,7 @@ class NeatValidators {
     };
   }
 
-  // --- Collections / Lists ---
+  // --- Collections / Lists & Choice Validators ---
 
   /// Validates that an Iterable has at least [min] items.
   static NeatValidator<Object?> minItems(
@@ -1062,7 +1340,47 @@ class NeatValidators {
     };
   }
 
-  // --- Security & Sanitization ---
+  /// Validates that value belongs to the [allowedValues] collection.
+  static NeatValidator<T> oneOf<T>(
+    Iterable<T> allowedValues, {
+    String code = codeOneOf,
+    String? message,
+  }) {
+    final set = allowedValues.toSet();
+    return (T? value) {
+      if (value == null) return null;
+      if (!set.contains(value)) {
+        return NeatValidationError(
+          code,
+          params: {'allowedValues': allowedValues.toList()},
+          message: message,
+        );
+      }
+      return null;
+    };
+  }
+
+  /// Validates that value does NOT belong to the [forbiddenValues] collection.
+  static NeatValidator<T> noneOf<T>(
+    Iterable<T> forbiddenValues, {
+    String code = codeNoneOf,
+    String? message,
+  }) {
+    final set = forbiddenValues.toSet();
+    return (T? value) {
+      if (value == null) return null;
+      if (set.contains(value)) {
+        return NeatValidationError(
+          code,
+          params: {'forbiddenValues': forbiddenValues.toList()},
+          message: message,
+        );
+      }
+      return null;
+    };
+  }
+
+  // --- Security, Network & Format Validators ---
 
   /// Validates that string contains no HTML or Script tags (anti-XSS).
   static NeatValidator<Object?> noHtml({
@@ -1076,6 +1394,105 @@ class NeatValidators {
         return NeatValidationError(code, message: message);
       }
       return null;
+    };
+  }
+
+  /// Validates IPv4 address string (e.g. `192.168.1.1`).
+  static NeatValidator<Object?> ipv4({
+    String code = codeIp,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+      if (!_ipv4RegExp.hasMatch(value.trim())) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates IPv6 address string.
+  static NeatValidator<Object?> ipv6({
+    String code = codeIp,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+      if (!_ipv6RegExp.hasMatch(value.trim())) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates either an IPv4 or IPv6 address string.
+  static NeatValidator<Object?> ipAddress({
+    String code = codeIp,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+      final trimmed = value.trim();
+      if (!_ipv4RegExp.hasMatch(trimmed) && !_ipv6RegExp.hasMatch(trimmed)) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates UUID (GUID) string.
+  static NeatValidator<Object?> uuid({
+    int? version,
+    String code = codeUuid,
+    String? message,
+  }) {
+    final regex = version == null ? _uuidAnyVersionRegExp : _uuidRegExp;
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+      if (!regex.hasMatch(value.trim())) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates Hex Color string (`#FFF`, `#RRGGBB`, `#AARRGGBB`).
+  static NeatValidator<Object?> hexColor({
+    bool leadingHashRequired = false,
+    String code = codeHexColor,
+    String? message,
+  }) {
+    final regex = leadingHashRequired
+        ? _hexColorWithHashRegExp
+        : _hexColorAnyRegExp;
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+      if (!regex.hasMatch(value.trim())) {
+        return NeatValidationError(code, message: message);
+      }
+      return null;
+    };
+  }
+
+  /// Validates that a string is valid parseable JSON.
+  static NeatValidator<Object?> jsonString({
+    String code = codeJson,
+    String? message,
+  }) {
+    return (Object? value) {
+      if (value is! String?) return null;
+      if (value == null || value.isEmpty) return null;
+      try {
+        jsonDecode(value);
+        return null;
+      } on Object catch (_) {
+        return NeatValidationError(code, message: message);
+      }
     };
   }
 

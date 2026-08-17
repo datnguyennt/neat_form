@@ -19,7 +19,9 @@ void main() {
       expect(requiredValidator(0), isNull);
       expect(requiredValidator(false), isNull);
       expect(requiredValidator(['item']), isNull);
+      expect(requiredValidator([]), isNotNull);
       expect(requiredValidator({'key': 'value'}), isNull);
+      expect(requiredValidator({}), isNotNull);
     });
 
     test('required creates configurable required validator', () {
@@ -498,24 +500,224 @@ void main() {
       expect(vMdy('13/15/1995')?.code, NeatValidators.codeDateString);
     });
 
-    test('validates mustBePast, mustBeFuture, minYear, maxYear', () {
-      final vPast = NeatValidators.dateString(
-        format: 'DD/MM/YYYY',
-        mustBePast: true,
-        minYear: 1900,
-        maxYear: 2025,
-      );
-      expect(vPast('01/01/2000'), isNull);
-      expect(vPast('01/01/2099')?.code, NeatValidators.codeDateString);
-      expect(vPast('01/01/1850')?.code, NeatValidators.codeDateString);
-      expect(vPast('01/01/2030')?.code, NeatValidators.codeDateString);
+    test('validates format DD/MM/YY and date bounds', () {
+      final vYy = NeatValidators.dateString(format: 'DD/MM/YY');
+      expect(vYy('15/08/24'), isNull);
+      expect(vYy('15/08/2024')?.code, NeatValidators.codeDateString); // length mismatch
 
-      final vFuture = NeatValidators.dateString(
+      final vMinYear = NeatValidators.dateString(minYear: 2000);
+      expect(vMinYear('01/01/1999')?.code, NeatValidators.codeDateString);
+      expect(vMinYear('01/01/2000'), isNull);
+
+      final vMaxYear = NeatValidators.dateString(maxYear: 2025);
+      expect(vMaxYear('01/01/2026')?.code, NeatValidators.codeDateString);
+      expect(vMaxYear('01/01/2025'), isNull);
+    });
+
+    test('validates minAge and maxAge bounds with birthday later in month', () {
+      final now = DateTime.now();
+      final year18Ago = now.year - 18;
+      final year10Ago = now.year - 10;
+      final year70Ago = now.year - 70;
+
+      final vAge = NeatValidators.dateString(
         format: 'DD/MM/YYYY',
-        mustBeFuture: true,
+        minAge: 18,
+        maxAge: 65,
       );
-      expect(vFuture('01/01/2099'), isNull);
-      expect(vFuture('01/01/1990')?.code, NeatValidators.codeDateString);
+
+      // Format date strings
+      final padMonth = now.month.toString().padLeft(2, '0');
+      final padDay = now.day.toString().padLeft(2, '0');
+
+      expect(vAge('$padDay/$padMonth/$year18Ago'), isNull); // 18 exactly
+      expect(vAge('$padDay/$padMonth/$year10Ago')?.code, NeatValidators.codeDateString); // 10 (too young)
+      expect(vAge('$padDay/$padMonth/$year70Ago')?.code, NeatValidators.codeDateString); // 70 (too old)
+
+      // Test day after today in same month (birthday hasn't occurred yet this year)
+      if (now.day < 28) {
+        final nextDayPad = (now.day + 1).toString().padLeft(2, '0');
+        // Will be 17 years old today
+        expect(vAge('$nextDayPad/$padMonth/$year18Ago')?.code, NeatValidators.codeDateString);
+      }
+    });
+  });
+
+  group('Upgraded Numeric Validators (supports num and String)', () {
+    test('minValue and maxValue with num and String', () {
+      final vMin = NeatValidators.minValue(10);
+      expect(vMin(15), isNull);
+      expect(vMin('15'), isNull);
+      expect(vMin(10), isNull);
+      expect(vMin('10'), isNull);
+      expect(vMin(5)?.code, NeatValidators.codeMinValue);
+      expect(vMin('5')?.code, NeatValidators.codeMinValue);
+      expect(vMin('abc'), isNull); // non-numeric handled by numeric()
+      expect(vMin(null), isNull);
+
+      final vMax = NeatValidators.maxValue(100);
+      expect(vMax(50), isNull);
+      expect(vMax('50'), isNull);
+      expect(vMax(150)?.code, NeatValidators.codeMaxValue);
+      expect(vMax('150')?.code, NeatValidators.codeMaxValue);
+    });
+
+    test('valueRange and between with num and String', () {
+      final vRange = NeatValidators.valueRange(10, 50);
+      expect(vRange(10), isNull);
+      expect(vRange('30'), isNull);
+      expect(vRange(50), isNull);
+      expect(vRange(5)?.code, NeatValidators.codeValueRange);
+      expect(vRange('55')?.code, NeatValidators.codeValueRange);
+
+      final vBetween = NeatValidators.between(1, 5);
+      expect(vBetween(3), isNull);
+      expect(vBetween(6)?.code, NeatValidators.codeValueRange);
+    });
+
+    test('positive, negative, nonNegative, nonPositive', () {
+      final vPos = NeatValidators.positive();
+      expect(vPos(1), isNull);
+      expect(vPos('5.5'), isNull);
+      expect(vPos(0)?.code, NeatValidators.codePositive);
+      expect(vPos(-1)?.code, NeatValidators.codePositive);
+
+      final vNeg = NeatValidators.negative();
+      expect(vNeg(-1), isNull);
+      expect(vNeg('-5.5'), isNull);
+      expect(vNeg(0)?.code, NeatValidators.codeNegative);
+      expect(vNeg(1)?.code, NeatValidators.codeNegative);
+
+      final vNonNeg = NeatValidators.nonNegative();
+      expect(vNonNeg(0), isNull);
+      expect(vNonNeg('0'), isNull);
+      expect(vNonNeg(10), isNull);
+      expect(vNonNeg(-1)?.code, NeatValidators.codeNonNegative);
+      expect(vNonNeg('-0.1')?.code, NeatValidators.codeNonNegative);
+
+      final vNonPos = NeatValidators.nonPositive();
+      expect(vNonPos(0), isNull);
+      expect(vNonPos(-10), isNull);
+      expect(vNonPos(1)?.code, NeatValidators.codeNonPositive);
+    });
+
+    test('integerOnly validator', () {
+      final vInt = NeatValidators.integerOnly();
+      expect(vInt(10), isNull);
+      expect(vInt(10.0), isNull);
+      expect(vInt('100'), isNull);
+      expect(vInt(null), isNull);
+      expect(vInt(''), isNull);
+      expect(vInt(10.5)?.code, NeatValidators.codeIntegerOnly);
+      expect(vInt('10.5')?.code, NeatValidators.codeIntegerOnly);
+      expect(vInt('abc')?.code, NeatValidators.codeIntegerOnly);
+    });
+
+    test('multipleOf validator with num and String', () {
+      final vMult = NeatValidators.multipleOf(5);
+      expect(vMult(15), isNull);
+      expect(vMult('25'), isNull);
+      expect(vMult(7)?.code, NeatValidators.codeMultipleOf);
+      expect(vMult('12')?.code, NeatValidators.codeMultipleOf);
+    });
+  });
+
+  group('Time and Credit Card Expiry Validators', () {
+    test('timeString validator (HH:mm and HH:mm:ss)', () {
+      final vHm = NeatValidators.timeString(format: 'HH:mm');
+      expect(vHm('00:00'), isNull);
+      expect(vHm('12:30'), isNull);
+      expect(vHm('23:59'), isNull);
+      expect(vHm(null), isNull);
+      expect(vHm(''), isNull);
+      expect(vHm('24:00')?.code, NeatValidators.codeTimeString);
+      expect(vHm('12:60')?.code, NeatValidators.codeTimeString);
+      expect(vHm('1:30')?.code, NeatValidators.codeTimeString);
+      expect(vHm('12:30:45')?.code, NeatValidators.codeTimeString);
+
+      final vHms = NeatValidators.timeString(format: 'HH:mm:ss');
+      expect(vHms('12:30:45'), isNull);
+      expect(vHms('12:30:60')?.code, NeatValidators.codeTimeString);
+    });
+
+    test('creditCardExpiry validator', () {
+      final vExpiry = NeatValidators.creditCardExpiry();
+      expect(vExpiry('12/99'), isNull); // Far future
+      expect(vExpiry('12/2099'), isNull);
+      expect(vExpiry(null), isNull);
+      expect(vExpiry(''), isNull);
+
+      expect(vExpiry('01/10')?.code, NeatValidators.codeCreditCardExpiry); // Expired 2010
+      expect(vExpiry('13/28')?.code, NeatValidators.codeCreditCardExpiry); // Month 13
+      expect(vExpiry('00/28')?.code, NeatValidators.codeCreditCardExpiry); // Month 00
+      expect(vExpiry('invalid')?.code, NeatValidators.codeCreditCardExpiry);
+    });
+  });
+
+  group('Choice Validators: oneOf & noneOf', () {
+    test('oneOf and noneOf validators', () {
+      final vOne = NeatValidators.oneOf(['Admin', 'User', 'Guest']);
+      expect(vOne('Admin'), isNull);
+      expect(vOne('User'), isNull);
+      expect(vOne('Superadmin')?.code, NeatValidators.codeOneOf);
+      expect(vOne(null), isNull);
+
+      final vNone = NeatValidators.noneOf(['banned', 'root']);
+      expect(vNone('john'), isNull);
+      expect(vNone('root')?.code, NeatValidators.codeNoneOf);
+      expect(vNone('banned')?.code, NeatValidators.codeNoneOf);
+    });
+  });
+
+  group('Network & Format Validators: IP, UUID, HexColor, JSON', () {
+    test('ipv4, ipv6, ipAddress validators', () {
+      final v4 = NeatValidators.ipv4();
+      expect(v4('192.168.1.1'), isNull);
+      expect(v4('127.0.0.1'), isNull);
+      expect(v4('255.255.255.255'), isNull);
+      expect(v4('256.0.0.1')?.code, NeatValidators.codeIp);
+      expect(v4('192.168.1')?.code, NeatValidators.codeIp);
+
+      final v6 = NeatValidators.ipv6();
+      expect(v6('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), isNull);
+      expect(v6('invalid_ip')?.code, NeatValidators.codeIp);
+
+      final vAny = NeatValidators.ipAddress();
+      expect(vAny('192.168.1.1'), isNull);
+      expect(vAny('2001:0db8:85a3:0000:0000:8a2e:0370:7334'), isNull);
+      expect(vAny('999.999.999.999')?.code, NeatValidators.codeIp);
+    });
+
+    test('uuid validator', () {
+      final vUuid = NeatValidators.uuid();
+      expect(vUuid('c9bf9e57-1685-4c89-bafb-ff5af830be8a'), isNull);
+      expect(vUuid('123e4567-e89b-12d3-a456-426614174000'), isNull);
+      expect(vUuid('not-a-uuid')?.code, NeatValidators.codeUuid);
+    });
+
+    test('hexColor validator', () {
+      final vHex = NeatValidators.hexColor();
+      expect(vHex('#FFF'), isNull);
+      expect(vHex('#FFFFFF'), isNull);
+      expect(vHex('FFFFFF'), isNull);
+      expect(vHex('#FFFFFFFF'), isNull);
+      expect(vHex('#GGG')?.code, NeatValidators.codeHexColor);
+      expect(vHex('#12345')?.code, NeatValidators.codeHexColor);
+
+      final vHexHash = NeatValidators.hexColor(leadingHashRequired: true);
+      expect(vHexHash('#FFFFFF'), isNull);
+      expect(vHexHash('FFFFFF')?.code, NeatValidators.codeHexColor);
+    });
+
+    test('jsonString validator', () {
+      final vJson = NeatValidators.jsonString();
+      expect(vJson('{"key": "value", "count": 1}'), isNull);
+      expect(vJson('[1, 2, 3]'), isNull);
+      expect(vJson('"simple string"'), isNull);
+      expect(vJson(null), isNull);
+      expect(vJson(''), isNull);
+      expect(vJson('{key: value}')?.code, NeatValidators.codeJson); // Invalid JSON
+      expect(vJson('{"unclosed": ')?.code, NeatValidators.codeJson);
     });
   });
 }
