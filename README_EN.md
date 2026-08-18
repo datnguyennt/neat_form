@@ -2,12 +2,10 @@
 
 A clean, lightweight, robust, and type-safe (100% `Object?`) form state management and validation library for **Flutter & Dart**.
 
-[![pub package](https://img.shields.io/badge/pub-v1.3.2-blue.svg)](https://pub.dev/packages/neat_form)
+[![pub package](https://img.shields.io/badge/pub-v1.3.0-blue.svg)](https://pub.dev/packages/neat_form)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests: 215 Passed](https://img.shields.io/badge/tests-215%20passed-brightgreen.svg)](https://github.com/datnguyennt/neat_form)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev)
-
-> **[Tiếng Việt](README.md) | [English](#1-overview)**
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-success.svg)](https://pub.dev) > **[Tiếng Việt](README.md) | [English](#1-overview)**
 
 ---
 
@@ -17,10 +15,10 @@ A clean, lightweight, robust, and type-safe (100% `Object?`) form state manageme
 - [3. 🏗️ Architecture & Data Flow](#3-architecture--data-flow)
 - [4. 📦 Installation](#4-installation)
 - [5. 🚀 Quick Start Guide](#5-quick-start-guide)
-  - [Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)](#method-1-neatform-ui-builders-suite-70-less-boilerplate)
-  - [Method 2: Flutter Native with `ListenableBuilder`](#method-2-flutter-native-with-listenablebuilder)
-  - [Method 3: Seamless Riverpod Integration](#method-3-seamless-riverpod-integration)
-  - [Method 4: BLoC / Cubit Integration](#method-4-bloc--cubit-integration)
+    - [Method 1: NeatForm UI Builders Suite (70% Less Boilerplate)](#method-1-neatform-ui-builders-suite-70-less-boilerplate)
+    - [Method 2: Flutter Native with `ListenableBuilder`](#method-2-flutter-native-with-listenablebuilder)
+    - [Method 3: Seamless Riverpod Integration](#method-3-seamless-riverpod-integration)
+    - [Method 4: BLoC / Cubit Integration](#method-4-bloc--cubit-integration)
 - [6. ✈️ Dynamic Form Array (`NeatFormArray`)](#6-dynamic-form-array-neatformarray)
 - [7. 🔄 Form Submission Lifecycle](#7-form-submission-lifecycle)
 - [8. 📋 Built-in Validators (Cheat Sheet)](#8-built-in-validators-cheat-sheet)
@@ -267,9 +265,9 @@ class LoginNotifier extends Notifier<NeatFormState<LoginFormKey>> with NeatFormN
 
   @override
   Map<LoginFormKey, NeatValidator<Object?>> get validators => {
-        LoginFormKey.email: NeatValidators.email(),
-        LoginFormKey.password: NeatValidators.minLength(6),
-      };
+    LoginFormKey.email: NeatValidators.email(),
+    LoginFormKey.password: NeatValidators.minLength(6),
+  };
 
   Future<void> submit() async {
     await submitForm(onSubmit: (values) async {
@@ -292,15 +290,15 @@ import 'package:neat_form/neat_form.dart';
 class LoginCubit extends Cubit<NeatFormState<LoginFormKey>> with NeatFormCubitMixin<LoginFormKey> {
   LoginCubit()
       : super(NeatFormState.fromValues({
-          LoginFormKey.email: '',
-          LoginFormKey.password: '',
-        }));
+    LoginFormKey.email: '',
+    LoginFormKey.password: '',
+  }));
 
   @override
   Map<LoginFormKey, NeatValidator<Object?>> get validators => {
-        LoginFormKey.email: NeatValidators.email(),
-        LoginFormKey.password: NeatValidators.minLength(6),
-      };
+    LoginFormKey.email: NeatValidators.email(),
+    LoginFormKey.password: NeatValidators.minLength(6),
+  };
 
   Future<void> login() async {
     await submitForm(onSubmit: (values) async {
@@ -446,12 +444,12 @@ Automatically cancels obsolete validation requests when the user continues typin
 
 ```dart
 await formController.validateFieldAsync(
-  LoginFormKey.username,
-  (username) async {
-    final isTaken = await api.checkUsername(username);
-    if (isTaken) return const NeatValidationError('username_taken', message: 'Username is already in use');
-    return null;
-  },
+LoginFormKey.username,
+(username) async {
+final isTaken = await api.checkUsername(username);
+if (isTaken) return const NeatValidationError('username_taken', message: 'Username is already in use');
+return null;
+},
 );
 ```
 
@@ -481,8 +479,8 @@ await formController.validateFieldAsync(
 1. 📋 **Form Explorer:** Automatically detects all active `NeatFormController` and `NeatFormArrayController` instances in the running app (zero manual setup).
 2. 🔍 **Field Inspector & Live Value Mutator:** Inspect full state of each field (Value, Initial Value, Error Message, Error Code, Touched, Validating state). **Override and inject new values live** into the connected device to test reactive UI behavior.
 3. ⚡ **Smart Autofill & ⚠️ Boundary Test Generator:**
-   - **⚡ Fill Valid:** Auto-populates realistic valid data (Email, Password, Phone, Birthday...).
-   - **⚠️ Fill Boundary:** Injects edge-case and invalid values (Malformatted email, Short password, Negative numbers, Empty strings) with 1 click to test error displays.
+    - **⚡ Fill Valid:** Auto-populates realistic valid data (Email, Password, Phone, Birthday...).
+    - **⚠️ Fill Boundary:** Injects edge-case and invalid values (Malformatted email, Short password, Negative numbers, Empty strings) with 1 click to test error displays.
 4. 📥 **Import & Restore JSON State:** Paste any JSON state snapshot to recreate specific bug reproduction states instantly.
 5. 🕒 **Live Event Stream Timeline:** Monitor real-time form lifecycle events (`neat_form:event`) with exact timestamps and formatted payload viewer.
 
