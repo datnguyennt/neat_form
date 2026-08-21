@@ -1,3 +1,9 @@
+# 1.3.3
+
+- **Documentation & Navigation:**
+  - Fixed all markdown Table of Contents anchor links in `README.md` and `README_EN.md` for 100% smooth navigation on `pub.dev` and GitHub.
+  - Added Live Web Demo badge pointing to GitHub Pages showcase.
+
 # 1.3.2
 
 - **Documentation & Table of Contents:**
