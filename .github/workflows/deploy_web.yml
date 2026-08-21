@@ -1,0 +1,61 @@
+name: Deploy Web Showcase Demo
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*' # Tự động chạy mỗi khi release một version mới
+  workflow_dispatch: # Cho phép bấm nút chạy thủ công từ GitHub Actions UI
+
+# Cấp quyền cho GitHub Actions deploy lên GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Cho phép chạy 1 bản build tại 1 thời điểm để tránh xung đột deployment
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build Flutter Web & Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 💙 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install Root Dependencies
+        run: flutter pub get
+
+      - name: 📦 Install Example Dependencies
+        run: |
+          cd example
+          flutter pub get
+
+      - name: 🚀 Build Flutter Web Demo
+        run: |
+          cd example
+          flutter build web --release --base-href "/neat_form/"
+
+      - name: ⚙️ Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 📤 Upload Artifact to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'example/build/web'
+
+      - name: 🌐 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
