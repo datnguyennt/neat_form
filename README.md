@@ -492,7 +492,10 @@ await formController.validateFieldAsync(
 
 ## 14. Showcase App
 
-Xem mã nguồn hoàn chỉnh với đầy đủ các tab showcase trong thư mục [`example/`](example):
+Trải nghiệm ứng dụng demo trực tiếp hoặc chạy mã nguồn showcase từ thư mục [`example/`](example):
+
+* 🌐 **Trải nghiệm Live Web Demo ngay:** [https://datnguyennt.github.io/neat_form/](https://datnguyennt.github.io/neat_form/)
+* 💻 **Chạy local trên máy của bạn:**
 
 ```bash
 cd example

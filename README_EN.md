@@ -492,7 +492,10 @@ await formController.validateFieldAsync(
 
 ## 14. Showcase App
 
-Explore the complete multi-tab showcase application in the [`example/`](example) directory:
+Explore the live web demo or run the full multi-tab showcase from the [`example/`](example) directory:
+
+* 🌐 **Try the Live Web Demo now:** [https://datnguyennt.github.io/neat_form/](https://datnguyennt.github.io/neat_form/)
+* 💻 **Run locally on your machine:**
 
 ```bash
 cd example
